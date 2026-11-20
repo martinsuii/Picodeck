@@ -1,10 +1,10 @@
 blank_issues_enabled: false
 contact_links:
   - name: Documentation
-    url: https://martinsuii.github.io/Picodeck/
+    url: https://msuii.dev/Picodeck/
     about: Install, update, games, WiFi, apps, companion and contributing.
   - name: Making apps
-    url: https://martinsuii.github.io/Picodeck/apps.html
+    url: https://msuii.dev/Picodeck/apps.html
     about: App SDK, API, packages and examples.
   - name: Releases
     url: https://github.com/martinsuii/Picodeck/releases

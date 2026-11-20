@@ -13,7 +13,7 @@ import markdown
 HERE = pathlib.Path(__file__).resolve().parent
 SITE = HERE.parent / "docs"
 REPO = "https://github.com/martinsuii/Picodeck"
-PAGES_URL = "https://martinsuii.github.io/Picodeck"
+PAGES_URL = "https://msuii.dev/Picodeck"
 
 
 def version():

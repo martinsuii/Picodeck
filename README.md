@@ -26,11 +26,11 @@ launcher, tool box and small app computer.
 
 ## Documentation
 
-- **[Using PicoDeck](https://martinsuii.github.io/Picodeck/using.html)** — install, update, games, WiFi,
+- **[Using PicoDeck](https://msuii.dev/Picodeck/using.html)** — install, update, games, WiFi,
   apps, store, companion, recovery and troubleshooting.
-- **[Making apps](https://martinsuii.github.io/Picodeck/apps.html)** — app SDK, API, `.pap` packages,
+- **[Making apps](https://msuii.dev/Picodeck/apps.html)** — app SDK, API, `.pap` packages,
   examples and limits.
-- **[Contributing](https://martinsuii.github.io/Picodeck/contributing.html)** — builds, flash layout, safety rules,
+- **[Contributing](https://msuii.dev/Picodeck/contributing.html)** — builds, flash layout, safety rules,
   testing and releases.
 
 ## Features
