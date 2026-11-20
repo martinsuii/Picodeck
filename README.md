@@ -1,230 +1,283 @@
 # PicoDeck
 
-Custom launcher firmware for the [Pajenicko PicoPad](https://picopad.eu) — a handheld
-RP2040 game console. The launcher boots first, auto-runs the previously flashed
-MakeCode Arcade game on a watchdog reset, or shows a menu where you can flash a
-new game from the SD card with on-the-fly ST7789 display patching and palette
-remapping.
+PicoDeck is a custom launcher and app platform for the
+[Pajenicko PicoPad](https://picopad.eu), an RP2040 handheld. It runs on the
+PicoPad Arcade (Pico W for native WiFi) and turns the device into a game
+launcher, tool box and small app computer.
 
-> Why this exists: stock MakeCode Arcade only supports ILI9341 / ST7735 displays.
-> PicoPad uses ST7789. Drag-and-dropping any Arcade game gives you a black screen.
-> This launcher patches the runtime binary at flash time so unmodified Arcade UF2s
-> just work.
+> **Derived from the PicoPad Arcade Launcher by MakerClassCZ.**
+> The base launcher, the UF2 flashing/update tooling, the MakeCode Arcade
+> display patching and the palette/CF2 work all come from
+> <https://github.com/MakerClassCZ/picopad-arcade-launcher>.
+> PicoDeck adds native WiFi, custom apps, the app store, the always-on
+> companion and the recovery/snapshot work on top of that base.
+
+## What it does
+
+- Boots first and shows a launcher menu: **PLAY / LOAD / TOOLS / FUN / APPS /
+  SETTINGS**.
+- Flashes MakeCode Arcade `.uf2` games from the SD card and patches them at
+  flash time so they run on the PicoPad's ST7789 display.
+- Runs the Pico W's own WiFi radio on core 1 while the menu stays on core 0.
+- Runs custom SD-card apps with a small app API.
+- Serves an always-on USB companion protocol, so the desktop/Android app works
+  without opening a special screen on the PicoPad.
+- Keeps a separate recovery image so a broken launcher can still be recovered.
 
 ## Features
 
-- **Auto-launch** the flashed game after a watchdog reset
-- **Standalone recovery partition** — `boot2` always starts a separate 12 KB
-  recovery image first. It chain-loads the launcher on a normal boot, or opens
-  the recovery menu if the launcher image is invalid.
-- **Recovery menu** — hold **UP + X** at power-on / RESET for
-  *Boot launcher / Boot to BOOTSEL / Restart*. Because it lives in its own
-  flash partition, a corrupt launcher can't take it down. Kept minimal to fit
-  in 12 KB — the debug shell and SD update stay in the launcher's own menus,
-  and BOOTSEL reflashes the full install image if the launcher is broken.
-- **Hard reset / power-on** → menu (PLAY / LOAD / DEBUG SHELL / USB MSC / BOOTSEL)
-- **PLAY** detects what is in flash and dispatches:
-  - Arcade game — jumps to `0x10000100` (game vector table)
-  - PicoLibSDK app — auto-detected via PPAD magic, jumps to `0x10008000`
-  - PicoLibSDK loader without app — jumps to loader, skips BootScreenSaver via
-    `WATCHDOG_SCRATCH[4]` magic
-- **LOAD from SD** — file picker over the SD card, UF2 selection dialog with
-  toggleable patches, flash with progress bar
-- **USB MSC** — exposes the SD card as a USB drive (drag-drop file transfer
-  between PC and SD)
-- **DEBUG SHELL** — interactive shell over USB CDC (`COMx` / `/dev/ttyACMx`)
-  with commands: `dump`, `scan`, `readraw`, `readuf2`, `verify`, `flash`,
-  `lut`, `cf2`, `bootsel`, `reset`, `exit`
-- **REBOOT TO BOOTSEL** — drag-drop a UF2 from the host
-- **Button Test** — live state of all eight buttons, with a latched dot for each
-  one pressed; hold **LEFT + A** for 1.2 s to exit
-- **UF2 Inspector** — validate a `.uf2` from SD and show its version, family,
-  address range and block count
-- **Themes** — restyle the boot splash, screensaver and menus from `.thm`/`.ini`
-  files on the SD card: colours, layout, custom elements, animation timing.
-  Pick one under **SETTINGS → Themes**; see [`themes/README.md`](themes/README.md)
-- **Companion Link** — drive the launcher from the desktop/Android companion
-  app over USB or WiFi (status, apps, themes, reboot, bootloader); see
-  [`companion/README.md`](companion/README.md)
-- **Native WiFi** — the launcher runs the Pico W's own radio on core 1 while
-  the menu stays on core 0, serving Companion Link on port 2323 without an
-  ESP32. Flash the module into the game area; see
-  [`wifi_module/README.md`](wifi_module/README.md). A standalone-only variant
-  lives in [`wifi_link/`](wifi_link/README.md).
+### Games
 
-Patches applied at flash time (all use **full-region signature scan** so they
-survive across MakeCode runtime versions whose offsets shift between builds):
+- MakeCode Arcade UF2 support with signature-based patches that survive
+  different MakeCode runtime versions:
+  - ST7789 display init replaces the ILI9341 sequence
+  - palette stub + 256-byte LUT at `0x10080000`
+  - CF2 device config at `0x100FF000`
+- **LOAD from SD** picks a `.uf2`, lets you toggle patches, flashes with a
+  progress bar and verifies boot2.
+- **PLAY** launches the flashed game; a watchdog reset from a game returns to
+  it.
+- Games and the native WiFi module share the game area, so **PLAY is disabled
+  while the WiFi module is installed**.
+- Game images are limited to **640 KB** in the current layout because the app
+  slot lives above them.
 
-- **ST7789 init** replaces the ILI9341 init sequence (signature
-  `EF 03 03 80 02 CF 03`)
-- **Palette stub** + 256-byte LUT at `0x10080000` (signature
-  `4B 01 0B 43 CC 10 04 43`)
-- **CF2 config** at `0x100FF000` — PicoPad-specific configuration block
+### Recovery and safety
+
+- `boot2` jumps to a separate **12 KB recovery image**, which then chain-loads
+  the launcher. A bad launcher never takes recovery down with it.
+- Hold **UP + X** at power-on/RESET for the recovery menu:
+  *Boot launcher / Boot to BOOTSEL / Restart*.
+- Launcher updates write the **recovery image first**, then the launcher. A
+  power loss leaves recovery intact.
+- Game flashes write **boot2 first**, verify it, then write the game.
+- **Flasher trasher** never erases sector 0; it invalidates the game vector and
+  keeps boot2.
+- Full-screen BSODs for the launcher, apps and WiFi module. **Y saves a crash
+  log** to `/crash/CRASHnnn.TXT` on the SD card.
+
+### Native WiFi
+
+- The Pico W radio runs on **core 1** from a separate module image
+  (`wifi_module`, currently 1.2.20). The launcher stays on core 0.
+- WiFi menu: Status, Scan, Connect manually, Connect saved, Disconnect.
+- Credentials come from `/wifi.cnf` (two lines: SSID, password).
+- **Auto-install:** open **SETTINGS → WIFI** with no module installed and it
+  offers to flash `/wifi_module.uf2` (or `/apps/wifi_module.uf2`) for you. The
+  WiFi BSOD also offers a reinstall.
+- Raw TCP for apps and a plain HTTP GET client in the module. No TLS.
+- The launcher keeps the module alive while apps run; leaving an app does not
+  restart the device.
+
+### Custom apps
+
+- Apps are folders in `/apps` on the SD card:
+
+  ```
+  /apps/
+    apps.cfg                 installed app ids
+    index.txt                optional update index
+    hello/
+      app.ini                name=Hello
+                             bin=app.bin
+                             version=1.0
+                             open=txt            (optional file types)
+      app.bin                compiled app
+      config.ini             per-app settings
+      data/                  per-app files
+  ```
+
+- **APPS → App Store → From SD card** installs folders or single-file `.pap`
+  packages.
+- **APPS → App Store → From internet** downloads from
+  `http://assets.msuii.dev/picopadapps/` as 3 KB chunks (plain HTTP; the
+  desktop companion can proxy HTTPS if needed).
+- **APPS** lists installed apps and launches them; **Y** opens the app manager:
+  Launch, Reinstall, Edit config, Clear data, Remove.
+- Apps can use the PicoLibSDK display/input/SD APIs plus:
+  - system: exit, reboot, recovery, BOOTSEL, custom BSOD, crash log
+  - config: `AppConfigRead/Write`, `AppDataPath`
+  - WiFi: status, scan, connect, disconnect, `AppHttpGet`
+  - raw TCP: `AppNetOpen/Send/Recv/Close` (module 1.2.18+)
+  - theme: `AppTheme(...)`, `AppThemeName()`
+  - files: `AppArgPath()` when opened from the file manager
+- **Leaving an app returns to the menu without rebooting.** The launcher
+  snapshots its RAM to a reserved flash area before launching and the app's
+  `AppExit()` restores it. The WiFi module keeps running.
+- Apps are built with `apps_sdk/`; see [`apps_sdk/README.md`](apps_sdk/README.md).
+
+### Companion
+
+- Desktop (Linux/Windows) and Android companion:
+  - browse/upload/rename/delete files on the SD card
+  - **Prepare SD** (wipe + create `Apps`, `Arcade`, `Backups`, `Conf`,
+    `Themes` and the first-boot marker)
+  - theme editor with a 320×240 preview
+  - UF2 inspection, staging updates
+  - device status, app launching, **Companion Link**
+- The PicoPad boots as USB CDC and runs the companion command service in the
+  background, so no Companion Link screen is needed on the PicoPad.
+- The Windows companion is a portable `.exe`; Linux is an AppImage; Android is
+  an APK. See [`companion/README.md`](companion/README.md).
+
+### First boot and SD card
+
+- If no SD card is present, the launcher shows a clear warning and keeps
+  WiFi/tools usable.
+- The companion's **Prepare SD** creates:
+
+  ```
+  /Apps       custom apps
+  /Arcade     MakeCode Arcade .uf2 games
+  /Backups    game/flash backups
+  /Conf       updates and configuration
+  /Themes     .thm themes
+  /FRESH.TXT  first-boot marker (8.3-safe)
+  /.fresh     same marker for PCs
+  ```
+
+- If `FRESH.TXT` or `.fresh` exists at boot, a short 6-page tutorial explains
+  the folders; it deletes the marker when finished.
+
+### Themes and tools
+
+- Themes from `.thm` files on the SD card: colours, boot splash, screensaver,
+  menu layout, text and shapes. See [`themes/README.md`](themes/README.md).
+- TOOLS: GPIO control, Rubber Ducky, SD file manager, image viewer, WiFi,
+  Button Test, UF2 Inspector, Companion Link, and the SD card reader/debug
+  shell in development builds.
+- FUN: Snake, USB gamepad, mouse jiggler, media remote, keyboard pranks, Paint,
+  Calculator, Stopwatch, Timer, MIDI pad.
+
+### Version note
+
+PicoDeck **1.0.0** is a version reset after the earlier 1.x builds. The updater
+compares versions, so applying 1.0.0 over 1.6.0 shows
+`version is not newer (A: force)` — press **A** once.
+
+## Flash layout (1 MB default)
+
+```
+0x10000000  boot2 (256 B)              -> recovery
+0x10000100  game / WiFi module area     up to 0x100A0000 (640 KB)
+0x10050000  launcher RAM snapshot      0x37800, used only while an app runs
+0x100A0000  custom app slot             252 KB
+0x100DF000  app install record          4 KB
+0x100E0000  launcher                    108 KB
+0x100FB000  recovery                    12 KB
+0x100FE000  settings                    4 KB
+0x100FF000  CF2 config                  4 KB
+```
+
+The second 1 MB of flash is left untouched (CIRCUITPY-safe) in the default
+layout. A 2 MB layout is available with `-DLAUNCHER_2MB=1`.
+
+## Build
+
+### Launcher and recovery
+
+```bash
+source setup_env.sh
+cd launcher
+EXTRA_CFLAGS="-DLAUNCHER_RELEASE" ./c.sh
+```
+
+Outputs in `launcher/`:
+
+- `PICODECK_install.uf2` — boot2 + launcher + recovery (BOOTSEL install)
+- `PICODECK_update_1.0.0.uf2` — launcher + recovery (SD update)
+- `PICODECK_update.uf2` — convenience copy
+- `recovery/RECOVERY.uf2` — recovery image alone
+
+### WiFi module
+
+```bash
+cd wifi_module
+./build.sh
+```
+
+Output: `wifi_module/dist/PICODECK_wifimod_1.2.20.uf2`. Copy it to the SD as
+`wifi_module.uf2` for the in-launcher installer.
+
+### Apps
+
+```bash
+cd apps_sdk
+./build.sh examples/hello       # builds examples/hello/app.bin
+python3 pack.py examples/hello  # builds examples/hello/hello.pap
+```
+
+### Companion
+
+```bash
+cd companion
+node server.js                  # web UI + API on http://localhost:8787
+node desktop/build.js           # Linux Electron folder + tarball
+node android/build.js           # Android APK (needs an Android SDK)
+```
+
+Release builds use electron-builder for the Windows portable `.exe` and the
+Linux AppImage; the config lives in `companion/package.json`.
+
+### Prerequisites
+
+- ARM GNU Toolchain 12.x or newer (`arm-none-eabi-gcc`)
+- GNU Make and Python 3.8+
+- Node.js 18+ for the companion
+- Android SDK (build-tools 34, platform android-34) for the APK
+- Electron (or electron-builder) for the desktop builds
+
+## Usage
+
+1. **New device:** flash `PICODECK_install.uf2` in BOOTSEL mode (drag it onto
+   the `RPI-RP2` drive).
+2. **Existing PicoDeck:** copy the update to the SD as `update.uf2`, then
+   **SETTINGS → Update from SD**.
+3. Copy the WiFi asset to the SD as `wifi_module.uf2`; open
+   **SETTINGS → WIFI** and accept the install prompt.
+4. Put MakeCode Arcade games in `/Arcade` and load them with **LOAD from SD**.
+5. Put apps in `/Apps`; install them from **APPS → App Store → From SD card**.
+6. If the launcher breaks, hold **UP + X** at power-on for recovery, or flash
+   the install image via BOOTSEL.
 
 ## Repository layout
 
 ```
-picopad-arcade-launcher/
-├── README.md
-├── setup_env.sh / setup_env.bat   ← export PICO_ROOT_PATH
-├── launcher/                      ← the launcher firmware
-│   ├── c.sh                       ← build script (calls picolibsdk/_c1.sh)
-│   ├── config.h                   ← compile-time feature flags
-│   ├── Makefile
-│   ├── launcher_m1.ld             ← 1 MB layout (CIRCUITPY-safe, default)
-│   ├── launcher_m1_2mb.ld         ← 2 MB layout (overwrites CIRCUITPY)
-│   ├── recovery/                  ← standalone recovery image (own partition)
-│   │   ├── c.sh                   ← recovery build script
-│   │   ├── config.h               ← minimal SDK config (no USB/SD/FAT)
-│   │   ├── recovery_m1.ld         ← recovery linker script (12 KB slot)
-│   │   └── src/recovery_main.cpp  ← boot selector + recovery menu
-│   ├── bin_to_uf2.py              ← BIN → UF2 packer (called by c.sh)
-│   ├── merge_install_bin.py       ← launcher + recovery → one install image
-│   ├── post_process_boot2.py      ← patches boot2 target (recovery) + CRC32
-│   └── src/                       ← C++ sources
-├── themes/                        ← example theme files + format reference
-├── companion/                     ← desktop/Android companion app
-│   ├── server.js / web/           ← local HTTP API + UI
-│   ├── desktop/                   ← standalone Electron app
-│   └── android/                   ← standalone APK (WebView + Java bridge)
-├── wifi_module/                   ← launcher-integrated WiFi (core 1 module)
-├── wifi_link/                     ← standalone WiFi app (fallback)
-├── esp32/wifi_bridge/             ← ESP32 UART/WiFi bridge firmware
-└── picolibsdk/                    ← bundled PicoLibSDK (pruned to picopad10)
+├── launcher/            launcher firmware, recovery, UF2 tooling
+├── wifi_module/         native WiFi module (core 1)
+├── wifi_link/           standalone WiFi test app (not built by default)
+├── esp32/               legacy ESP32 bridge firmware (no longer built)
+├── apps_sdk/            app API, linker script, packer and examples
+├── companion/           desktop/Android companion, server, web UI
+├── themes/              example themes and theme format docs
+├── picolibsdk/          vendored, pruned PicoLibSDK (picopad10)
+└── setup_env.sh/.bat    PICO_ROOT_PATH setup
 ```
-
-`picolibsdk/` is a vendored, pruned copy of [Panda381/PicoLibSDK](https://github.com/Panda381/PicoLibSDK).
-Sample programs and other-device support directories were dropped, leaving the
-core SDK + picopad10 device files. One file is patched relative to upstream:
-`_sdk/usb_src/sdk_usb_dev.c` exposes the MSC class driver entry that upstream
-keeps in `_sdk/usb_src/TODO/`.
-
-## Build prerequisites
-
-- **GCC ARM Embedded 12.x or newer** (`gcc-arm-none-eabi`)
-  - Linux: `apt install gcc-arm-none-eabi`
-  - macOS: `brew install --cask gcc-arm-embedded`
-  - Windows: [ARM GNU Toolchain](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)
-  - The `setup_env` scripts honour `ARM_GCC_DIR` if you need to pin a
-    specific toolchain (= when multiple are installed). Otherwise whichever
-    `arm-none-eabi-gcc` is first on PATH is used.
-- **GNU Make** — bundled inside `picolibsdk/_tools/` and added to PATH by
-  `setup_env.sh` / `setup_env.bat` automatically
-- **Python 3.8+** for the post-processing scripts in `launcher/` (no
-  third-party packages required)
-
-GCC 10.x is **not enough** — the linker flag `--no-warn-rwx-segment` and modern
-address expressions need binutils 2.39+.
-
-> **Windows users:** ARM GCC cannot handle non-ASCII characters anywhere in the
-> path. If your username (= `%USERPROFILE%`) contains any accented characters
-> the build will fail with cryptic `cc1.exe: fatal error ... No such file or
-> directory` errors. Clone this repo to an ASCII-only path such as
-> `C:\projects\picopad-arcade-launcher` (or set up a directory junction with
-> `mklink /J`).
-
-## Build
-
-```bash
-# Linux / macOS / Git Bash on Windows
-cd picopad-arcade-launcher
-source setup_env.sh
-cd launcher
-./c.sh                 # picopad10 (default), 1 MB layout
-```
-
-```cmd
-:: Windows cmd
-cd picopad-arcade-launcher
-setup_env.bat
-cd launcher
-bash c.sh
-```
-
-Output:
-
-- `PICODECK_install.uf2` — full boot chain including boot2, launcher and
-  the standalone recovery image. Flash this onto a blank PicoPad in BOOTSEL
-  mode (drag-drop). **Wipes any flashed game.**
-- `PICODECK_update.uf2` — launcher + recovery, no boot2. Keeps the
-  currently flashed game. On units whose boot2 still jumps straight to the
-  launcher, the recovery image is written but dormant and the launcher's own
-  built-in **UP + X** fallback menu is used instead.
-- `recovery/RECOVERY.uf2` — recovery image alone, for debugging.
-
-### Flash layout (1 MB default)
-
-```
-0x10000000  boot2 (256 B)        → jumps to recovery
-0x10000100  game region          (up to 0x100E0000)
-0x100E0000  launcher             (108 KB)
-0x100FB000  recovery             (12 KB, separate image)
-0x100FE000  settings             (4 KB)
-0x100FF000  CF2 config           (4 KB)
-```
-
-The game region is untouched by the recovery split: recovery is carved out of
-the launcher partition. Games occupy `0x10000100..0x100E0000` (~896 KB).
-Settings moved from `0x100FC000` to `0x100FE000` (one-time settings reset:
-backlight returns to default) because the old sector now sits inside the
-recovery partition.
-
-### 2 MB flash layout (no CIRCUITPY)
-
-Default layout occupies the first 1 MB of flash, leaving the second 1 MB
-untouched so a CircuitPython `CIRCUITPY` filesystem (at `0x10100000+`)
-survives. If you don't need CIRCUITPY and want maximum game space:
-
-```bash
-EXTRA_CFLAGS="-DLAUNCHER_2MB=1" ./c.sh
-```
-
-This puts the launcher at `0x101E0000` and lets games take ~1.95 MB instead of
-~960 KB. The recovery image moves to `0x101FB000` and settings to `0x101FE000`.
-
-### Release build (no debug shell, no USB MSC)
-
-```bash
-EXTRA_CFLAGS="-DLAUNCHER_RELEASE" ./c.sh
-```
-
-Disables both the USB CDC debug shell and the USB MSC SD reader. Saves ~25 KB
-and is what you ship to non-developer users.
-
-## Themes
-
-The launcher looks for theme files in `/themes/` on the SD card. Copy
-`themes/showcase.thm` (or `themes/neon.thm`) there, open
-**SETTINGS → Themes**, and press **A** on a name. The selection is stored in
-`/themes/active.cfg` and reloaded at boot.
-
-A theme can change colours, the boot splash, the screensaver and the menu
-layout. It supports colour variables, named colours, text alignment, marquee /
-blinking text, shapes (rect, frame, line, circle, disc), live clock / weather /
-status elements, and timing keys for the splash and screensaver. Themes replace
-the built-in boot/saver element lists by default; set `boot_append=1` or
-`saver_append=1` to extend them instead.
-
-The complete key and element reference is in
-[`themes/README.md`](themes/README.md).
-
-## Usage
-
-1. Flash `PICODECK_install.uf2` onto your PicoPad in BOOTSEL mode.
-2. Put MakeCode Arcade `.uf2` games onto an SD card (any folder layout).
-3. Insert the SD card, power-cycle the PicoPad — the launcher menu appears.
-4. **LOAD from SD** → pick a game → confirm patches → wait for flash to finish.
-5. The PicoPad reboots into the game. From now on, watchdog resets bring you
-   straight back to the game; pressing the hardware RESET button gets you to
-   the launcher menu.
-6. If the launcher ever fails to boot, the recovery image catches it and shows
-   the recovery menu. Hold **UP + X** at power-on to open that menu on purpose.
 
 ## Credits
 
+PicoDeck would not exist without these projects:
+
+- **[MakerClassCZ/picopad-arcade-launcher](https://github.com/MakerClassCZ/picopad-arcade-launcher)**
+  — the base PicoPad Arcade launcher, UF2 flashing/update tooling and the
+  MakeCode Arcade display/palette patching. PicoDeck is derived from it.
 - [Panda381/PicoLibSDK](https://github.com/Panda381/PicoLibSDK) — the alternative
-  RP2040/RP2350 SDK that this project builds on
-- [Pajenicko PicoPad](https://github.com/pajenicko/picopad) — the hardware
-- [microsoft/uf2](https://github.com/microsoft/uf2) — UF2 format spec and tools
+  RP2040/RP2350 SDK used by the launcher and apps.
+- [Raspberry Pi Pico SDK](https://github.com/raspberrypi/pico-sdk) and the
+  CYW43 driver — used by the native WiFi module.
+- [Pajenicko PicoPad](https://github.com/pajenicko/picopad) — the hardware.
+- [microsoft/uf2](https://github.com/microsoft/uf2) — UF2 format and tools.
 - [microsoft/pxt-arcade](https://github.com/microsoft/pxt-arcade) — MakeCode
-  Arcade runtime
+  Arcade runtime and games.
+
+## Limits and honest notes
+
+- **No app sandbox.** The RP2040 has no MPU. A malicious app can write flash and
+  brick boot2. Only install apps you trust; BOOTSEL is the last recovery.
+- **No TLS in the WiFi module.** The direct app store is plain HTTP; the
+  desktop companion can fetch HTTPS and proxy packages.
+- **App snapshot flash writes.** Returning from an app without a reboot saves
+  ~227 KB to flash on launch, which costs a second or two and some flash wear.
+- **Windows companion** does not bundle the native `serialport` module in this
+  release; use the PicoPad's WiFi TCP link on Windows.
+- The legacy ESP32 WiFi/Bluetooth tools are no longer part of the launcher.
