@@ -1,0 +1,55 @@
+name: Feature request
+description: Suggest an improvement for the launcher, apps, store, WiFi or companion.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tell us what you want to do, not only how to build it. Check the docs
+        and existing issues first.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Launcher / menu
+        - Games / MakeCode Arcade
+        - Native WiFi module
+        - Custom apps / app API
+        - App Store / catalogue
+        - Companion app
+        - Recovery / flashing
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      placeholder: "I want to ... but currently ..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Mockups, links, related issues.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and docs.
+          required: true

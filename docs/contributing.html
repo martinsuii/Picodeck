@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Build PicoDeck, understand the flash layout and ship a release.">
+<meta property="og:title" content="Contributing · PicoDeck docs">
+<meta property="og:description" content="Build PicoDeck, understand the flash layout and ship a release.">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://martinsuii.github.io/Picodeck/contributing.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<title>Contributing · PicoDeck docs</title>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <button class="menu-btn" id="menuBtn" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">P</span>
+    <span class="brand-name">PicoDeck</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <div class="top-spacer"></div>
+  <span class="version">v1.0.0</span>
+  <a class="top-link" href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener">GitHub ↗</a>
+  <a class="btn btn-small" href="https://github.com/martinsuii/Picodeck/releases">Download</a>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-group">
+  <div class="side-title">Documentation</div>
+  <a class="" href="index.html"><span>▦</span> Overview</a>
+  <a class="" href="using.html"><span>▤</span> Using PicoDeck</a>
+  <a class="" href="apps.html"><span>⌘</span> Making apps</a>
+  <a class="active" href="contributing.html"><span>⚙</span> Contributing</a>
+</div>
+    <div class="side-group">
+  <div class="side-title">Project</div>
+  <a href="https://github.com/martinsuii/Picodeck/releases" target="_blank" rel="noopener"><span>↓</span> Releases</a>
+  <a href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener"><span>⌂</span> Source</a>
+  <a href="http://assets.msuii.dev/picopadapps/" target="_blank" rel="noopener"><span>◈</span> App catalogue</a>
+  <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener"><span>↗</span> Base project</a>
+</div>
+    <div class="side-foot">
+      <div>PicoDeck <span>v1.0.0</span></div>
+      <div class="muted">Base launcher by MakerClassCZ</div>
+    </div>
+  </aside>
+
+  <main class="content" id="main">
+    <div class="crumbs"><a href="index.html">Docs</a><span>/</span>Contributing</div>
+    <div class="page-head">
+      <h1>Contributing</h1>
+      <p class="subtitle">Builds, flash layout, safety invariants, testing and releases.</p>
+    </div>
+    
+    <article class="prose">
+<p>Thanks for helping. PicoDeck is a PicoPad launcher plus a module, an app SDK
+and a companion. This page covers the builds, the flash layout rules, the app
+API compatibility rules and the test checklist.</p>
+<p>PicoDeck is derived from the PicoPad Arcade Launcher by MakerClassCZ
+(<a href="https://github.com/MakerClassCZ/picopad-arcade-launcher">https://github.com/MakerClassCZ/picopad-arcade-launcher</a>). The base launcher,
+UF2 tooling and MakeCode Arcade patching come from there.</p>
+<h2 id="repository-map">Repository map<a class="headerlink" href="#repository-map" title="Permanent link"></a></h2>
+<pre><code>launcher/        launcher firmware, recovery image, UF2 tooling
+wifi_module/     native WiFi module (core 1, Pico SDK)
+apps_sdk/        app API, linker script, packer, examples
+companion/       Node server + web UI, desktop Electron, Android
+themes/          example themes and theme format
+esp32/           legacy ESP32 firmware (not built by the launcher)
+wifi_link/       standalone WiFi test app (not part of the launcher build)
+picolibsdk/      vendored, pruned PicoLibSDK for picopad10
+docs/            user and developer docs
+.github/         issue templates and PR template
+</code></pre>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link"></a></h2>
+<ul>
+<li>ARM GNU Toolchain <strong>12.x or newer</strong> (<code>arm-none-eabi-gcc</code>)</li>
+<li>GNU Make, Python 3.8+</li>
+<li>Node.js 18+ for the companion</li>
+<li>Android SDK (build-tools 34, platform android-34) for the APK</li>
+<li>Electron and/or electron-builder for the desktop builds</li>
+</ul>
+<p>You need a <strong>Pico W</strong> PicoPad for native WiFi. The launcher still boots on a
+non-W PicoPad with WiFi disabled.</p>
+<h2 id="build">Build<a class="headerlink" href="#build" title="Permanent link"></a></h2>
+<h3 id="launcher-and-recovery">Launcher and recovery<a class="headerlink" href="#launcher-and-recovery" title="Permanent link"></a></h3>
+<pre><code class="language-bash">source setup_env.sh
+cd launcher
+EXTRA_CFLAGS=&quot;-DLAUNCHER_RELEASE&quot; ./c.sh
+</code></pre>
+<p>Outputs:</p>
+<ul>
+<li><code>PICODECK_install.uf2</code> — boot2 + launcher + recovery</li>
+<li><code>PICODECK_update_1.0.0.uf2</code> — launcher + recovery (and <code>PICODECK_update.uf2</code>)</li>
+<li><code>recovery/RECOVERY.uf2</code></li>
+</ul>
+<p>Development builds (omit <code>-DLAUNCHER_RELEASE</code>) include the USB CDC debug shell
+and USB MSC. Release builds omit them to save flash.</p>
+<h3 id="wifi-module">WiFi module<a class="headerlink" href="#wifi-module" title="Permanent link"></a></h3>
+<pre><code class="language-bash">cd wifi_module
+./build.sh
+</code></pre>
+<p>Uses the Pico SDK (<code>PICO_SDK_PATH</code>, default <code>/usr/share/pico-sdk</code>) and board
+<code>pico_w</code>. Output: <code>dist/PICODECK_wifimod_1.2.20.uf2</code>.</p>
+<h3 id="apps">Apps<a class="headerlink" href="#apps" title="Permanent link"></a></h3>
+<pre><code class="language-bash">cd apps_sdk
+./build.sh examples/hello
+python3 pack.py examples/hello
+</code></pre>
+<h3 id="companion">Companion<a class="headerlink" href="#companion" title="Permanent link"></a></h3>
+<pre><code class="language-bash">cd companion
+node server.js                 # http://localhost:8787
+node desktop/build.js          # Linux Electron folder + tarball
+node android/build.js          # Android APK
+</code></pre>
+<p>Release desktop builds use electron-builder (config in
+<code>companion/package.json</code>):</p>
+<pre><code class="language-bash">cd companion
+npx electron-builder --linux AppImage --win portable --x64
+</code></pre>
+<p>The Windows build skips native module rebuilds; the <code>serialport</code> optional
+dependency is not bundled there.</p>
+<h2 id="flash-layout-1-mb-default">Flash layout (1 MB default)<a class="headerlink" href="#flash-layout-1-mb-default" title="Permanent link"></a></h2>
+<pre><code>0x10000000  boot2
+0x10000100  game / WiFi module area      up to 0x100A0000 (640 KB)
+0x10050000  launcher RAM snapshot        0x37800 (while an app runs)
+0x100A0000  custom app slot              252 KB
+0x100DF000  app install record           4 KB
+0x100E0000  launcher                     108 KB
+0x100FB000  recovery                     12 KB
+0x100FE000  settings                     4 KB
+0x100FF000  CF2                          4 KB
+</code></pre>
+<p>The 2 MB layout (<code>-DLAUNCHER_2MB=1</code>) moves the launcher to <code>0x101E0000</code>; the
+app SDK currently targets the 1 MB layout.</p>
+<h3 id="invariants-do-not-break-these">Invariants — do not break these<a class="headerlink" href="#invariants-do-not-break-these" title="Permanent link"></a></h3>
+<ul>
+<li><strong>boot2 is the only path to recovery.</strong> Never erase sector 0 in the trasher.</li>
+<li><strong>Game flashing writes boot2 first, verifies it, then writes the game.</strong></li>
+<li><strong>Launcher updates write recovery first, then the launcher.</strong></li>
+<li><strong>App installs only touch the app slot and record.</strong> Never boot2, recovery,
+  launcher, module or CF2.</li>
+<li><strong>Games/modules must not erase above <code>GAME_ERASE_HI</code> (the app slot).</strong></li>
+<li><strong>The launcher snapshot must be outside the app slot and the module area.</strong></li>
+<li>The launcher and recovery addresses are shared across <code>launcher/config.h</code>,
+  <code>launcher/*.ld</code>, <code>launcher/recovery/config.h</code>, <code>launcher/c.sh</code>,
+  <code>launcher/merge_install_bin.py</code>, <code>app_shared.h</code> and <code>apps_sdk/app.ld</code>.
+  Changing one without the others bricks the chain.</li>
+</ul>
+<h2 id="app-api-compatibility">App API compatibility<a class="headerlink" href="#app-api-compatibility" title="Permanent link"></a></h2>
+<p><code>app_shared.h</code> is the contract between the launcher and apps.</p>
+<ul>
+<li><code>app_info_t</code> is <strong>append-only</strong>. New fields go at the end, and old apps must
+  still work.</li>
+<li><code>APP_API_VERSION</code> is checked by <code>Info()</code>. Bump it only with a migration plan.</li>
+<li>Extended fields are gated by <code>APP_INFO_EXT_MAGIC</code>; old launchers don't write
+  them and new apps fall back to defaults.</li>
+<li><code>APP_INFO_ADDR</code>, <code>APP_SLOT_BASE</code>, <code>APP_SLOT_SIZE</code>, <code>APP_RECORD_ADDR</code>,
+  <code>APP_NET_BUF_ADDR</code> and <code>LAUNCHER_SNAPSHOT_*</code> are fixed addresses. Changing
+  them requires rebuilding every app and updating <code>apps_sdk/app.ld</code>.</li>
+<li>Keep <code>app_info_t</code> out of app RAM: the app heap ends at <code>0x20037800</code>.</li>
+</ul>
+<h2 id="coding-style">Coding style<a class="headerlink" href="#coding-style" title="Permanent link"></a></h2>
+<ul>
+<li>Match the surrounding file: 4 spaces, C++ for the launcher, C for the app SDK
+  and the module.</li>
+<li>Avoid <code>printf</code>/<code>malloc</code> in the launcher where a static buffer works. RAM is
+  tight; check <code>arm-none-eabi-size</code>.</li>
+<li>Use the theme colours (<code>g_theme.*</code>, <code>AppTheme(...)</code>) rather than hard-coded
+  colours in UI.</li>
+<li>Keys: no assumptions about B; it may be broken. Use A/X/UP/DOWN/Y.</li>
+<li>Any flash operation must pause core 1 first and resume after (unless the
+  module is being replaced).</li>
+<li>Never call <code>RuntimeInit</code>/<code>DeviceInit</code>/<code>BatInit</code>/<code>DispInit</code> from an app.</li>
+<li>Keep new launcher code within the flash budget; release builds are close to
+  the 108 KB launcher image.</li>
+</ul>
+<h2 id="test-checklist">Test checklist<a class="headerlink" href="#test-checklist" title="Permanent link"></a></h2>
+<p>Before a release, on real hardware:</p>
+<ul>
+<li>[ ] Install UF2 on a blank device via BOOTSEL.</li>
+<li>[ ] Update from SD; recovery still boots.</li>
+<li>[ ] Boot with no SD → warning; insert card → normal.</li>
+<li>[ ] First boot with <code>FRESH.TXT</code> → tutorial; marker deleted.</li>
+<li>[ ] Game flash from SD; PLAY works; watchdog reset relaunches.</li>
+<li>[ ] WiFi module install prompt; scan; connect; status stages; link up.</li>
+<li>[ ] Flash a game over the module; PLAY works; reinstall module; WiFi returns.</li>
+<li>[ ] App install from SD folder and <code>.pap</code>; launch; exit without reboot.</li>
+<li>[ ] App manager: reinstall, edit config, clear data, remove.</li>
+<li>[ ] App store online (HTTP) install/update.</li>
+<li>[ ] Crash log: force a BSOD, Y writes <code>/crash/CRASHnnn.TXT</code>.</li>
+<li>[ ] Companion connects without the Companion Link screen; Prepare SD on a
+  spare card.</li>
+<li>[ ] Recovery: UP+X at power-on; BOOTSEL.</li>
+<li>[ ] Power loss during update and during a game flash (expected: recovery).</li>
+</ul>
+<h2 id="app-store">App store<a class="headerlink" href="#app-store" title="Permanent link"></a></h2>
+<p>The catalogue is served at <a href="http://assets.msuii.dev/picopadapps/">http://assets.msuii.dev/picopadapps/</a>.</p>
+<ul>
+<li>Files live in <code>/var/www/assets/picopadapps/</code> on the server.</li>
+<li><code>index.txt</code> format: <code>id|version|size|url|name</code>.</li>
+<li>The PicoPad fetches over <strong>plain HTTP</strong>; package files are split into 3 KB
+  chunks (<code>hello.pap.000</code>, <code>.001</code>, ...) because the module's HTTP buffer is
+  4 KB.</li>
+<li>The desktop companion can fetch HTTPS and stream packages instead.</li>
+<li>Bump the app's <code>app.ini</code> <code>version=</code> and the index version together.</li>
+</ul>
+<h2 id="git-and-releases">Git and releases<a class="headerlink" href="#git-and-releases" title="Permanent link"></a></h2>
+<ul>
+<li>Don't commit build outputs. The repo <code>.gitignore</code> covers <code>build/</code>, UF2/BIN/
+  ELF/MAP, <code>*.pap</code>, <code>node_modules</code>, <code>companion/dist</code>.</li>
+<li>Commit messages: short imperative summary (<code>wifi: fix scan completion</code>,
+  <code>apps: add clear data</code>).</li>
+<li>Releases: build launcher/module/apps, run <code>android/build.js</code>, build the
+  AppImage and Windows EXE with electron-builder, generate <code>SHA256SUMS</code>, then
+  <code>gh release create vX.Y.Z --notes-file ...</code> with the assets.</li>
+<li>Issue and PR templates live in <code>.github/</code>.</li>
+</ul>
+<h2 id="reporting-issues">Reporting issues<a class="headerlink" href="#reporting-issues" title="Permanent link"></a></h2>
+<p>Use the GitHub issue templates:</p>
+<ul>
+<li><strong>Bug report</strong> — launcher/game/WiFi/companion problems.</li>
+<li><strong>App or store issue</strong> — a custom app or the app catalogue.</li>
+<li><strong>Feature request</strong> — ideas.</li>
+</ul>
+<p>Include the PicoDeck version, module version, hardware (Pico W?), SD size and
+the crash log when there is one. Please don't paste secrets from <code>/wifi.cnf</code>.</p>
+<h2 id="credits">Credits<a class="headerlink" href="#credits" title="Permanent link"></a></h2>
+<ul>
+<li><a href="https://github.com/MakerClassCZ/picopad-arcade-launcher">MakerClassCZ/picopad-arcade-launcher</a> — base launcher, UF2 tooling, MakeCode Arcade patching</li>
+<li><a href="https://github.com/Panda381/PicoLibSDK">Panda381/PicoLibSDK</a></li>
+<li><a href="https://github.com/raspberrypi/pico-sdk">Raspberry Pi Pico SDK</a></li>
+<li><a href="https://github.com/pajenicko/picopad">Pajenicko PicoPad</a></li>
+<li><a href="https://github.com/microsoft/uf2">microsoft/uf2</a></li>
+<li><a href="https://github.com/microsoft/pxt-arcade">microsoft/pxt-arcade</a></li>
+</ul>
+    </article>
+    <nav class="pagenav">
+  <a class="page-prev" href="apps.html"><span>Previous</span><strong>Making apps</strong></a>
+  <a class="page-next" href="index.html"><span>Next</span><strong>Documentation</strong></a>
+</nav>
+  </main>
+
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <div class="toc-inner">
+<ul>
+<li><a href="#repository-map">Repository map</a></li>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#build">Build</a><ul>
+<li><a href="#launcher-and-recovery">Launcher and recovery</a></li>
+<li><a href="#wifi-module">WiFi module</a></li>
+<li><a href="#apps">Apps</a></li>
+<li><a href="#companion">Companion</a></li>
+</ul>
+</li>
+<li><a href="#flash-layout-1-mb-default">Flash layout (1 MB default)</a><ul>
+<li><a href="#invariants-do-not-break-these">Invariants — do not break these</a></li>
+</ul>
+</li>
+<li><a href="#app-api-compatibility">App API compatibility</a></li>
+<li><a href="#coding-style">Coding style</a></li>
+<li><a href="#test-checklist">Test checklist</a></li>
+<li><a href="#app-store">App store</a></li>
+<li><a href="#git-and-releases">Git and releases</a></li>
+<li><a href="#reporting-issues">Reporting issues</a></li>
+<li><a href="#credits">Credits</a></li>
+</ul>
+</div>
+
+  </aside>
+</div>
+
+<footer class="footer">
+  <div>PicoDeck <strong>v1.0.0</strong> · docs</div>
+  <div class="muted">Derived from <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener">PicoPad Arcade Launcher by MakerClassCZ</a></div>
+</footer>
+
+<div class="backdrop" id="backdrop"></div>
+<script src="app.js"></script>
+</body>
+</html>

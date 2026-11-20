@@ -1,0 +1,85 @@
+name: App or store issue
+description: A custom app fails to install, launch or behave; or the store fails.
+title: "[App]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For an app problem, include the app name, where it came from, and the
+        exact error text. If it crashed, press **Y** on the BSOD and attach
+        `/crash/CRASHnnn.TXT`.
+  - type: input
+    id: app
+    attributes:
+      label: App name / folder
+      placeholder: "WiFi Scan / wifiscan"
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Installed from
+      options:
+        - SD card folder
+        - SD card .pap package
+        - Online store (From internet)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: appversion
+    attributes:
+      label: App version
+      description: The `version=` in the app's `app.ini`.
+      placeholder: "1.0"
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Where does it fail?
+      options:
+        - Installing (From SD card)
+        - Downloading (From internet)
+        - Extracting the package
+        - Launching / BSOD
+        - Runs but behaves wrong
+        - Removing / reinstall / config
+    validations:
+      required: true
+  - type: input
+    id: error
+    attributes:
+      label: Exact error text
+      placeholder: "Install failed / Extract failed (SD write)"
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: crashlog
+    attributes:
+      label: Crash log / BSOD details
+      description: Press Y on the BSOD and attach `/crash/CRASHnnn.TXT`.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: PicoDeck version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I tried reinstalling the app.
+        - label: I checked the SD card is writable (not read-only/full).
+        - label: I removed WiFi passwords and other secrets.
+          required: true

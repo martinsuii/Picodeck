@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Install, update, play games, connect WiFi, run apps and recover a PicoPad.">
+<meta property="og:title" content="Using PicoDeck · PicoDeck docs">
+<meta property="og:description" content="Install, update, play games, connect WiFi, run apps and recover a PicoPad.">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://martinsuii.github.io/Picodeck/using.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<title>Using PicoDeck · PicoDeck docs</title>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <button class="menu-btn" id="menuBtn" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">P</span>
+    <span class="brand-name">PicoDeck</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <div class="top-spacer"></div>
+  <span class="version">v1.0.0</span>
+  <a class="top-link" href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener">GitHub ↗</a>
+  <a class="btn btn-small" href="https://github.com/martinsuii/Picodeck/releases">Download</a>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-group">
+  <div class="side-title">Documentation</div>
+  <a class="" href="index.html"><span>▦</span> Overview</a>
+  <a class="active" href="using.html"><span>▤</span> Using PicoDeck</a>
+  <a class="" href="apps.html"><span>⌘</span> Making apps</a>
+  <a class="" href="contributing.html"><span>⚙</span> Contributing</a>
+</div>
+    <div class="side-group">
+  <div class="side-title">Project</div>
+  <a href="https://github.com/martinsuii/Picodeck/releases" target="_blank" rel="noopener"><span>↓</span> Releases</a>
+  <a href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener"><span>⌂</span> Source</a>
+  <a href="http://assets.msuii.dev/picopadapps/" target="_blank" rel="noopener"><span>◈</span> App catalogue</a>
+  <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener"><span>↗</span> Base project</a>
+</div>
+    <div class="side-foot">
+      <div>PicoDeck <span>v1.0.0</span></div>
+      <div class="muted">Base launcher by MakerClassCZ</div>
+    </div>
+  </aside>
+
+  <main class="content" id="main">
+    <div class="crumbs"><a href="index.html">Docs</a><span>/</span>Using PicoDeck</div>
+    <div class="page-head">
+      <h1>Using PicoDeck</h1>
+      <p class="subtitle">Install, update, play games, connect WiFi, run apps and recover.</p>
+    </div>
+    
+    <article class="prose">
+<p>PicoDeck is the menu that starts on a PicoPad Arcade. From here you can play
+MakeCode Arcade games, use the built-in tools, connect WiFi, install and run
+custom apps, and manage the SD card.</p>
+<h2 id="what-you-need">What you need<a class="headerlink" href="#what-you-need" title="Permanent link"></a></h2>
+<ul>
+<li>A PicoPad Arcade. Native WiFi needs the <strong>Pico W</strong> version.</li>
+<li>A microSD card (FAT32/exFAT; the PicoPad reads 8.3 names).</li>
+<li>A USB cable for flashing and for the desktop companion.</li>
+</ul>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link"></a></h2>
+<p>For a new PicoPad or a device whose boot is broken:</p>
+<ol>
+<li>Hold <strong>BOOTSEL</strong> while plugging the PicoPad into the computer.</li>
+<li>A drive called <code>RPI-RP2</code> appears.</li>
+<li>Drag <code>PicoDeck-1.0.0-install.uf2</code> onto it.</li>
+<li>The PicoPad reboots into PicoDeck.</li>
+</ol>
+<p>The install image contains boot2, the launcher and the recovery image. It
+<strong>replaces any flashed game</strong>.</p>
+<h2 id="update">Update<a class="headerlink" href="#update" title="Permanent link"></a></h2>
+<ol>
+<li>Copy the update file to the SD card as <code>update.uf2</code>.</li>
+<li>On the PicoPad: <strong>SETTINGS → Update from SD</strong>.</li>
+<li>Select the file and confirm.</li>
+</ol>
+<p>Updates write the <strong>recovery image first</strong>, then the launcher, so a power loss
+still leaves a working recovery menu.</p>
+<blockquote>
+<p><strong>Version reset:</strong> 1.0.0 is lower than the earlier 1.6.0 build. The updater
+shows <code>version is not newer (A: force)</code> — press <strong>A</strong> once.</p>
+</blockquote>
+<h2 id="first-boot">First boot<a class="headerlink" href="#first-boot" title="Permanent link"></a></h2>
+<p>If the SD card contains <code>FRESH.TXT</code> or <code>.fresh</code>, PicoDeck shows a short tour:</p>
+<ol>
+<li>Welcome / card is ready</li>
+<li><strong>Apps</strong> — custom apps</li>
+<li><strong>Arcade</strong> — MakeCode Arcade games</li>
+<li><strong>Themes</strong> — <code>.thm</code> themes</li>
+<li><strong>Backups / Conf</strong> — backups and configuration</li>
+<li>Done</li>
+</ol>
+<p><code>A</code> advances, <code>X</code> skips. The marker is deleted afterwards so the tour only
+appears once.</p>
+<p>If no SD card is inserted, the launcher shows a warning and carries on. WiFi
+and the built-in tools still work, but games, themes and apps need the card.</p>
+<h2 id="sd-card-layout">SD card layout<a class="headerlink" href="#sd-card-layout" title="Permanent link"></a></h2>
+<pre><code>/Apps/                 custom apps
+/Arcade/               MakeCode Arcade .uf2 games
+/Backups/              game/flash backups
+/Conf/                 updates and configuration
+/Themes/               .thm themes
+/apps.cfg              installed app ids (created by PicoDeck)
+/index.txt             optional app update index
+/FRESH.TXT, /.fresh    first-boot tour marker
+/wifi.cnf              WiFi credentials (two lines: SSID, password)
+/wifi_module.uf2       native WiFi module for auto-install
+</code></pre>
+<p>Case does not matter to the PicoPad's FAT layer, but keep names 8.3-safe when
+possible. The companion's <strong>Prepare SD</strong> creates this structure for you.</p>
+<h2 id="main-menu">Main menu<a class="headerlink" href="#main-menu" title="Permanent link"></a></h2>
+<pre><code>PLAY
+LOAD from SD
+TOOLS
+FUN
+APPS
+SETTINGS
+</code></pre>
+<ul>
+<li><strong>PLAY</strong> launches the flashed game. It is disabled when the native WiFi
+  module is installed, because the module and games share the same flash area.</li>
+<li><strong>LOAD from SD</strong> flashes a <code>.uf2</code> game (or the WiFi module).</li>
+<li><strong>TOOLS / FUN</strong> contain the built-in apps.</li>
+<li><strong>APPS</strong> is the custom app list and the App Store.</li>
+<li><strong>SETTINGS</strong> has WiFi, themes, backlight, system info, flash tools and SD
+  update.</li>
+</ul>
+<h2 id="games">Games<a class="headerlink" href="#games" title="Permanent link"></a></h2>
+<p>PicoDeck patches MakeCode Arcade images for the PicoPad's ST7789 display and
+palette. The patches are found by signature, so most MakeCode runtime versions
+work.</p>
+<ol>
+<li>Copy <code>.uf2</code> games to <code>/Arcade</code> (any folder works with LOAD).</li>
+<li><strong>LOAD from SD</strong>, pick the game.</li>
+<li>Confirm the patch options (the defaults are right for PicoPad).</li>
+<li>Wait for the flash, then the PicoPad reboots into the game.</li>
+</ol>
+<p>A watchdog reset from a running game returns to the game. The hardware RESET
+button returns to the launcher.</p>
+<p><strong>Limits</strong></p>
+<ul>
+<li>Game images must fit below the app slot: <strong>640 KB</strong> in the current layout.</li>
+<li>Loading a game replaces the native WiFi module. Reinstall the module from
+  <strong>SETTINGS → WIFI</strong> when you want WiFi back.</li>
+<li>A power loss during the 256-byte boot2 write is the only case that needs
+  BOOTSEL recovery; boot2 is written first and verified to make that window as
+  small as possible.</li>
+</ul>
+<h2 id="wifi">WiFi<a class="headerlink" href="#wifi" title="Permanent link"></a></h2>
+<p>Native WiFi runs the Pico W radio on core 1 while the menu runs on core 0.</p>
+<h3 id="install-reinstall">Install / reinstall<a class="headerlink" href="#install-reinstall" title="Permanent link"></a></h3>
+<ul>
+<li>Open <strong>SETTINGS → WIFI</strong> with no module installed. PicoDeck offers to flash
+  the module.</li>
+<li>Put <code>wifi_module.uf2</code> in the card root or <code>/apps</code> first.</li>
+<li>The prompt warns that the module replaces a flashed game.</li>
+<li>If the module is installed but failed, the blue WiFi BSOD offers
+  <strong>A: reinstall</strong> too.</li>
+<li>You can still use <strong>LOAD from SD</strong> to flash the module manually.</li>
+</ul>
+<h3 id="connect">Connect<a class="headerlink" href="#connect" title="Permanent link"></a></h3>
+<ul>
+<li><strong>SETTINGS → WIFI → Scan networks</strong> lists nearby SSIDs.</li>
+<li><strong>Connect manually</strong> asks for SSID and password.</li>
+<li><strong>Connect saved</strong> uses <code>/wifi.cnf</code> (line 1 = SSID, line 2 = password).</li>
+<li><strong>Status</strong> shows the real link stage: connecting, getting an IP, wrong
+  password, network not found, etc.</li>
+</ul>
+<p>Credentials are written to <code>/wifi.cnf</code> when you connect manually; the launcher
+seeds the module from it at boot.</p>
+<h3 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link"></a></h3>
+<ul>
+<li>The launcher keeps the module running when you launch an app.</li>
+<li><strong>PLAY is disabled</strong> while the module is installed.</li>
+<li>No TLS: apps and the store can use plain HTTP only. The desktop companion
+  can proxy HTTPS.</li>
+<li>If WiFi fails, use <strong>SETTINGS → WIFI → Status</strong> and the WiFi BSOD stage /
+  crash log to diagnose. A missing or half-flashed module is the usual cause.</li>
+</ul>
+<h2 id="apps">Apps<a class="headerlink" href="#apps" title="Permanent link"></a></h2>
+<p>Custom apps live on the SD card.</p>
+<h3 id="install-from-sd">Install from SD<a class="headerlink" href="#install-from-sd" title="Permanent link"></a></h3>
+<ol>
+<li>Copy an app folder to <code>/Apps</code> (it needs <code>app.ini</code> + <code>app.bin</code>), or copy a
+   single <code>.pap</code> package there.</li>
+<li><strong>APPS → App Store → From SD card</strong>.</li>
+<li>Pick the app and press <strong>A</strong> to install.</li>
+<li><strong>X</strong> returns; the app appears in the APPS list.</li>
+</ol>
+<h3 id="install-from-the-internet">Install from the internet<a class="headerlink" href="#install-from-the-internet" title="Permanent link"></a></h3>
+<p><strong>APPS → App Store → From internet</strong> downloads from
+<code>http://assets.msuii.dev/picopadapps/</code> in 3 KB chunks. It needs WiFi connected.
+The desktop companion can proxy HTTPS if you run a different store.</p>
+<h3 id="run-and-manage">Run and manage<a class="headerlink" href="#run-and-manage" title="Permanent link"></a></h3>
+<ul>
+<li>The APPS list has <strong>App Store</strong> first, then installed apps.</li>
+<li><strong>A</strong> launches the selected app.</li>
+<li><strong>Y</strong> opens the app manager:</li>
+<li><strong>Launch</strong></li>
+<li><strong>Reinstall</strong> (force the app back into the flash slot)</li>
+<li><strong>Edit config</strong> (key/value editor for <code>config.ini</code>)</li>
+<li><strong>Clear data</strong> (delete config + data, keep the app)</li>
+<li><strong>Remove</strong> (remove from the list, keep the files)</li>
+<li>Leaving an app returns to the menu <strong>without rebooting</strong>. The launcher
+  snapshots its RAM before the app starts and restores it on exit.</li>
+<li>Apps with <code>open=txt,bmp,...</code> in <code>app.ini</code> appear in the file manager's
+  <strong>Open with</strong> chooser.</li>
+</ul>
+<h3 id="packages">Packages<a class="headerlink" href="#packages" title="Permanent link"></a></h3>
+<p>A <code>.pap</code> is a single-file app package. Pack one from the app folder:</p>
+<pre><code class="language-sh">cd apps_sdk
+python3 pack.py examples/hello
+</code></pre>
+<p>Copy the <code>.pap</code> to <code>/Apps</code>. The launcher extracts it, verifies <code>app.ini</code> and
+<code>app.bin</code>, and registers it. See <a href="apps.html">Making apps</a>.</p>
+<h3 id="update-index">Update index<a class="headerlink" href="#update-index" title="Permanent link"></a></h3>
+<p><code>/apps/index.txt</code> can mark installed apps as out of date:</p>
+<pre><code># id|version|size|url|name
+hello|1.0|14014|hello.pap|Hello
+</code></pre>
+<p>If the index version is newer than the app's <code>app.ini</code> version, APPS shows
+<code>(update)</code>.</p>
+<h2 id="companion-app">Companion app<a class="headerlink" href="#companion-app" title="Permanent link"></a></h2>
+<p>The desktop and Android companion can:</p>
+<ul>
+<li>browse, upload, rename and delete files on the SD card</li>
+<li><strong>Prepare SD</strong> — wipe the card and create <code>Apps</code>, <code>Arcade</code>, <code>Backups</code>,
+  <code>Conf</code>, <code>Themes</code> and the first-boot marker</li>
+<li>edit themes with a live 320×240 preview</li>
+<li>inspect UF2 files and stage updates</li>
+<li>show device status, launch apps, switch themes, reboot, enter BOOTSEL</li>
+</ul>
+<p>The PicoPad exposes <strong>USB CDC at boot</strong> and runs the companion service in the
+background. You do <strong>not</strong> need to open the Companion Link screen.</p>
+<ul>
+<li>Linux: AppImage or <code>node companion/server.js</code></li>
+<li>Windows: portable <code>.exe</code> (use WiFi TCP for the device connection)</li>
+<li>Android: APK</li>
+</ul>
+<blockquote>
+<p><strong>Prepare SD deletes everything on the card.</strong> Back it up first. It only
+works when the card is mounted on the computer, not while it is inside the
+PicoPad.</p>
+</blockquote>
+<h2 id="recovery">Recovery<a class="headerlink" href="#recovery" title="Permanent link"></a></h2>
+<ul>
+<li>Hold <strong>UP + X</strong> at power-on / RESET to open the recovery menu.</li>
+<li>Recovery lives in its own flash partition and is started by boot2 before the
+  launcher. A broken launcher cannot take it down.</li>
+<li>Recovery menu: <strong>Boot launcher</strong>, <strong>Boot to BOOTSEL</strong>, <strong>Restart</strong>.</li>
+<li>If recovery itself is broken, use <strong>BOOTSEL</strong> and flash the install image.</li>
+</ul>
+<h2 id="crash-logs">Crash logs<a class="headerlink" href="#crash-logs" title="Permanent link"></a></h2>
+<p>On a launcher, app or WiFi BSOD press <strong>Y</strong>:</p>
+<ul>
+<li>Launcher: IRQ, PC, CFSR, HFSR and registers</li>
+<li>App: app id + the same fault details</li>
+<li>WiFi: stage, reason, module version, fault registers</li>
+</ul>
+<p>Logs are written to <code>/crash/CRASHnnn.TXT</code> on the SD card. If the card is
+read-only or missing, the screen says so. The crash log tries to re-mount the
+card first, so a crash before the app initialised the SD can still be saved.</p>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link"></a></h2>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>Try</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"No SD card" on boot</td>
+<td>reinsert the card; run <code>fsck.vfat -a /dev/sdX</code> on a PC if it was removed while writing</td>
+</tr>
+<tr>
+<td>app install fails / SD write error</td>
+<td>card is read-only/full or the FAT is damaged; backup, <code>fsck</code>, retry</td>
+</tr>
+<tr>
+<td>WiFi scan times out</td>
+<td>check <strong>SETTINGS → WIFI → Status</strong>, reinstall the module, check the BSOD</td>
+</tr>
+<tr>
+<td>WiFi says wrong password / no network</td>
+<td>verify <code>/wifi.cnf</code>, 2.4 GHz network, WPA2</td>
+</tr>
+<tr>
+<td>app crashes</td>
+<td>press <strong>Y</strong> and read <code>/crash/CRASHnnn.TXT</code></td>
+</tr>
+<tr>
+<td>device won't boot</td>
+<td><strong>UP + X</strong> for recovery, or <strong>BOOTSEL</strong> + install UF2</td>
+</tr>
+<tr>
+<td>app shows <code>(update)</code> forever</td>
+<td>bump <code>version=</code> in the app's <code>app.ini</code> and the index together</td>
+</tr>
+</tbody>
+</table>
+<h2 id="limits">Limits<a class="headerlink" href="#limits" title="Permanent link"></a></h2>
+<ul>
+<li>No app sandbox (no MPU). Only install apps you trust.</li>
+<li>Native WiFi and games share the flash area; PLAY is disabled with the module.</li>
+<li>Game images: 640 KB max in the 1 MB layout.</li>
+<li>Apps: 252 KB max, and the launcher flash is nearly full.</li>
+<li>No TLS in the WiFi module; the direct store uses HTTP.</li>
+<li>Exiting an app writes a 227 KB launcher snapshot to flash, so app launch is a
+  little slower and uses flash endurance.</li>
+<li>The Windows companion does not bundle the native serial module in this
+  release; use WiFi TCP.</li>
+</ul>
+    </article>
+    <nav class="pagenav">
+  <a class="page-prev" href="index.html"><span>Previous</span><strong>Documentation</strong></a>
+  <a class="page-next" href="apps.html"><span>Next</span><strong>Making apps</strong></a>
+</nav>
+  </main>
+
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <div class="toc-inner">
+<ul>
+<li><a href="#what-you-need">What you need</a></li>
+<li><a href="#install">Install</a></li>
+<li><a href="#update">Update</a></li>
+<li><a href="#first-boot">First boot</a></li>
+<li><a href="#sd-card-layout">SD card layout</a></li>
+<li><a href="#main-menu">Main menu</a></li>
+<li><a href="#games">Games</a></li>
+<li><a href="#wifi">WiFi</a><ul>
+<li><a href="#install-reinstall">Install / reinstall</a></li>
+<li><a href="#connect">Connect</a></li>
+<li><a href="#notes">Notes</a></li>
+</ul>
+</li>
+<li><a href="#apps">Apps</a><ul>
+<li><a href="#install-from-sd">Install from SD</a></li>
+<li><a href="#install-from-the-internet">Install from the internet</a></li>
+<li><a href="#run-and-manage">Run and manage</a></li>
+<li><a href="#packages">Packages</a></li>
+<li><a href="#update-index">Update index</a></li>
+</ul>
+</li>
+<li><a href="#companion-app">Companion app</a></li>
+<li><a href="#recovery">Recovery</a></li>
+<li><a href="#crash-logs">Crash logs</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+<li><a href="#limits">Limits</a></li>
+</ul>
+</div>
+
+  </aside>
+</div>
+
+<footer class="footer">
+  <div>PicoDeck <strong>v1.0.0</strong> · docs</div>
+  <div class="muted">Derived from <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener">PicoPad Arcade Launcher by MakerClassCZ</a></div>
+</footer>
+
+<div class="backdrop" id="backdrop"></div>
+<script src="app.js"></script>
+</body>
+</html>

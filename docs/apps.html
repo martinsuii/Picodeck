@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Build a custom PicoDeck app with the SDK and app API.">
+<meta property="og:title" content="Making apps · PicoDeck docs">
+<meta property="og:description" content="Build a custom PicoDeck app with the SDK and app API.">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://martinsuii.github.io/Picodeck/apps.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<title>Making apps · PicoDeck docs</title>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <button class="menu-btn" id="menuBtn" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">P</span>
+    <span class="brand-name">PicoDeck</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <div class="top-spacer"></div>
+  <span class="version">v1.0.0</span>
+  <a class="top-link" href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener">GitHub ↗</a>
+  <a class="btn btn-small" href="https://github.com/martinsuii/Picodeck/releases">Download</a>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-group">
+  <div class="side-title">Documentation</div>
+  <a class="" href="index.html"><span>▦</span> Overview</a>
+  <a class="" href="using.html"><span>▤</span> Using PicoDeck</a>
+  <a class="active" href="apps.html"><span>⌘</span> Making apps</a>
+  <a class="" href="contributing.html"><span>⚙</span> Contributing</a>
+</div>
+    <div class="side-group">
+  <div class="side-title">Project</div>
+  <a href="https://github.com/martinsuii/Picodeck/releases" target="_blank" rel="noopener"><span>↓</span> Releases</a>
+  <a href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener"><span>⌂</span> Source</a>
+  <a href="http://assets.msuii.dev/picopadapps/" target="_blank" rel="noopener"><span>◈</span> App catalogue</a>
+  <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener"><span>↗</span> Base project</a>
+</div>
+    <div class="side-foot">
+      <div>PicoDeck <span>v1.0.0</span></div>
+      <div class="muted">Base launcher by MakerClassCZ</div>
+    </div>
+  </aside>
+
+  <main class="content" id="main">
+    <div class="crumbs"><a href="index.html">Docs</a><span>/</span>Making apps</div>
+    <div class="page-head">
+      <h1>Making apps</h1>
+      <p class="subtitle">The SDK, the app API, packages, examples and limits.</p>
+    </div>
+    
+    <article class="prose">
+<p>PicoDeck apps are ordinary PicoLibSDK programs that live on the SD card. They
+get the same display, keys, sound and SD functions as the built-in tools, plus
+a small API for WiFi, config, themes and system actions.</p>
+<p>Apps run while the native WiFi module keeps running on core 1. Leaving an app
+returns to the launcher without rebooting.</p>
+<h2 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link"></a></h2>
+<pre><code class="language-bash">cd apps_sdk
+cp -r examples/hello examples/myapp
+# edit examples/myapp/main.c and examples/myapp/app.ini
+./build.sh examples/myapp
+python3 pack.py examples/myapp
+</code></pre>
+<p>Copy <code>examples/myapp</code> (or <code>myapp.pap</code>) to <code>/Apps</code> on the SD card. On the
+PicoPad: <strong>APPS → App Store → From SD card → myapp → Install</strong>.</p>
+<h2 id="app-folder">App folder<a class="headerlink" href="#app-folder" title="Permanent link"></a></h2>
+<pre><code>/apps/myapp/
+  app.ini
+  app.bin
+  config.ini      (created on install)
+  data/           (your files, optional)
+</code></pre>
+<p><code>app.ini</code>:</p>
+<pre><code class="language-ini">name=My App
+bin=app.bin
+version=1.0
+author=you
+open=txt,md
+</code></pre>
+<ul>
+<li><code>name</code> — shown in APPS.</li>
+<li><code>bin</code> — the compiled binary (default <code>app.bin</code>).</li>
+<li><code>version</code> — used by the update index.</li>
+<li><code>open</code> — optional comma-separated extensions the app can open from the file
+  manager.</li>
+<li><code>author</code> — optional, free text.</li>
+</ul>
+<p>Keep the folder name and file names <strong>8.3-safe</strong>. The PicoPad's FAT layer does
+not support long names. The <code>.pap</code> packer enforces this.</p>
+<h2 id="code">Code<a class="headerlink" href="#code" title="Permanent link"></a></h2>
+<pre><code class="language-c">#include &quot;include.h&quot;   // PicoLibSDK + App API
+
+void AppMain(void)
+{
+    int frames = 0;
+
+    while (1)
+    {
+        DrawClear();
+        DrawText2(&quot;My App&quot;, 10, 10, AppTheme(APP_TH_TITLE));
+        DrawText(AppWifiIp(), 12, 48, AppTheme(APP_TH_TEXT));
+        DrawText(&quot;A: action   X: exit&quot;, 12, 210, AppTheme(APP_TH_DIM));
+
+        DrawRect(12 + (frames % 120), 90, 12, 12, AppTheme(APP_TH_ACCENT));
+        frames++;
+        DispUpdate();
+
+        u8 k = KeyGet();
+        if (k == KEY_X) return;             // returns to the launcher
+        if (k == KEY_A) { /* ... */ }
+
+        WaitMs(30);
+    }
+}
+</code></pre>
+<p>The SDK provides <code>main()</code> and the runtime; define <code>void AppMain(void)</code>. Return
+from it (or call <code>AppExit()</code>) to go back to the launcher.</p>
+<h2 id="what-you-can-use">What you can use<a class="headerlink" href="#what-you-can-use" title="Permanent link"></a></h2>
+<p>PicoLibSDK's normal API is available, including:</p>
+<ul>
+<li><code>DrawText</code>, <code>DrawText2</code>, <code>DrawRect</code>, <code>DrawFrame</code>, <code>DrawCircle</code>, <code>DrawClear</code>,
+  <code>DispUpdate</code>, <code>DispDirtyAll</code>, <code>SelFont8x8</code></li>
+<li><code>KeyGet</code>, <code>KeyPressed</code>, <code>KEY_*</code></li>
+<li><code>WaitMs</code>, <code>Time</code></li>
+<li><code>FileOpen/FileRead/FileWrite/FileCreate/FileDelete</code>, <code>FindOpen/FindNext</code></li>
+<li>sound and the other SDK libraries compiled into the app</li>
+</ul>
+<h3 id="runtime-rules-important">Runtime rules (important)<a class="headerlink" href="#runtime-rules-important" title="Permanent link"></a></h3>
+<p>The launcher already initialised the display, keys, SD and the WiFi module.
+The app SDK handles this with a custom runtime. <strong>Do not</strong> call:</p>
+<ul>
+<li><code>RuntimeInit()</code></li>
+<li><code>DeviceInit()</code></li>
+<li><code>BatInit()</code></li>
+<li><code>DispInit()</code> — re-running it resets SPI and can hard-fault</li>
+<li><code>RuntimeTerm()</code></li>
+</ul>
+<p>If you need to refresh the display state, use <code>DispDirtyAll()</code> after drawing.
+Do not touch core 1 or the radio pins (GP23/24/25/29); the module owns them.
+Use <code>AppBatteryMv()</code> instead of reading the battery ADC.</p>
+<h2 id="app-api">App API<a class="headerlink" href="#app-api" title="Permanent link"></a></h2>
+<h3 id="entry-and-system">Entry and system<a class="headerlink" href="#entry-and-system" title="Permanent link"></a></h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>void AppMain(void)</code></td>
+<td>your app entry point</td>
+</tr>
+<tr>
+<td><code>AppExit()</code></td>
+<td>back to the launcher (no reboot)</td>
+</tr>
+<tr>
+<td><code>AppReboot()</code></td>
+<td>full restart</td>
+</tr>
+<tr>
+<td><code>AppRecovery()</code></td>
+<td>reboot into the recovery menu</td>
+</tr>
+<tr>
+<td><code>AppBootsel()</code></td>
+<td>reboot to the <code>RPI-RP2</code> USB drive</td>
+</tr>
+<tr>
+<td><code>AppBsod(title, line1, line2, code)</code></td>
+<td>themed crash screen</td>
+</tr>
+<tr>
+<td><code>AppBatteryMv()</code></td>
+<td>last battery reading from the launcher</td>
+</tr>
+<tr>
+<td><code>AppId()</code></td>
+<td>app folder id</td>
+</tr>
+<tr>
+<td><code>AppApiVersion()</code></td>
+<td>API version (1)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="config-and-data">Config and data<a class="headerlink" href="#config-and-data" title="Permanent link"></a></h3>
+<pre><code class="language-c">char value[48];
+if (AppConfigRead(&quot;host&quot;, value, sizeof(value)) &gt; 0) { /* ... */ }
+AppConfigWrite(&quot;host&quot;, &quot;example.com&quot;);   // 0 = ok
+const char* data = AppDataPath();        // /apps/&lt;id&gt;/data
+</code></pre>
+<p><code>config.ini</code> is per app and survives reinstall. <code>Clear data</code> in the app
+manager deletes it and the contents of <code>data/</code>.</p>
+<h3 id="theme">Theme<a class="headerlink" href="#theme" title="Permanent link"></a></h3>
+<pre><code class="language-c">u16 bg    = AppTheme(APP_TH_BG);
+u16 text  = AppTheme(APP_TH_TEXT);
+u16 acc   = AppTheme(APP_TH_ACCENT);
+const char* name = AppThemeName();
+</code></pre>
+<p>Indices: <code>APP_TH_BG</code>, <code>APP_TH_PANEL</code>, <code>APP_TH_TITLE</code>, <code>APP_TH_TEXT</code>,
+<code>APP_TH_DIM</code>, <code>APP_TH_ACCENT</code>, <code>APP_TH_OK</code>, <code>APP_TH_WARN</code>, <code>APP_TH_ERR</code>,
+<code>APP_TH_SEL</code>, <code>APP_TH_HL</code>.</p>
+<p>The launcher passes its active theme colours in the app handoff. If no palette
+is present the SDK returns sensible defaults.</p>
+<h3 id="open-with-app">Open with app<a class="headerlink" href="#open-with-app" title="Permanent link"></a></h3>
+<p>Declare the extensions in <code>app.ini</code>:</p>
+<pre><code class="language-ini">open=txt,md
+</code></pre>
+<p>When the user selects a matching file in the file manager, a chooser appears.
+The full path is available as:</p>
+<pre><code class="language-c">const char* path = AppArgPath();   // &quot;&quot; when launched normally
+</code></pre>
+<h3 id="wifi">WiFi<a class="headerlink" href="#wifi" title="Permanent link"></a></h3>
+<pre><code class="language-c">if (AppWifiLinkUp())
+{
+    DrawText(AppWifiIp(), 10, 10, COL_WHITE);
+    DrawText(AppWifiSsid(), 10, 26, COL_WHITE);
+
+    AppWifiNet nets[16];
+    int n = AppWifiScan(nets, 16, 10000);
+    for (int i = 0; i &lt; n; i++)
+        DrawText(nets[i].ssid, 10, 44 + i * 12, COL_WHITE);
+}
+</code></pre>
+<ul>
+<li><code>AppWifiPresent()</code> — module installed</li>
+<li><code>AppWifiReady()</code> — module running</li>
+<li><code>AppWifiLinkUp()</code> — connected with an IP</li>
+<li><code>AppWifiIp()</code>, <code>AppWifiRssi()</code>, <code>AppWifiSsid()</code></li>
+<li><code>AppWifiScan(out, max, timeout_ms)</code> — returns count, -1 not ready, -2 timeout</li>
+<li><code>AppWifiConnect(ssid, pass)</code>, <code>AppWifiDisconnect()</code></li>
+</ul>
+<h3 id="http-get">HTTP GET<a class="headerlink" href="#http-get" title="Permanent link"></a></h3>
+<pre><code class="language-c">char body[1024];
+int n = AppHttpGet(&quot;http://example.com/&quot;, body, sizeof(body));
+if (n &gt; 0)
+{
+    // n includes HTTP headers; find the blank line if you need the body
+    char* p = strstr(body, &quot;\r\n\r\n&quot;);
+    if (p) { p += 4; /* use p */ }
+}
+</code></pre>
+<ul>
+<li>Plain HTTP only. <code>https://</code> is not supported by the module.</li>
+<li>The response is capped at the module's 4 KB network buffer.</li>
+<li>Do not use HTTP and raw TCP at the same time; they share the buffer.</li>
+<li>The URL must fit in the module's 160-character command line.</li>
+</ul>
+<h3 id="raw-tcp">Raw TCP<a class="headerlink" href="#raw-tcp" title="Permanent link"></a></h3>
+<pre><code class="language-c">int s = AppNetOpen(&quot;example.com&quot;, 80);
+while (AppNetState(s) == 1 || AppNetState(s) == 2) WaitMs(20);
+
+if (AppNetState(s) == 3)
+{
+    AppNetSend(s, &quot;GET / HTTP/1.0\r\nHost: example.com\r\n\r\n&quot;, 38);
+
+    char buf[512];
+    for (int i = 0; i &lt; 100; i++)
+    {
+        int n = AppNetRecv(s, buf, sizeof(buf));
+        if (n &gt; 0) { /* use buf[0..n-1] */ }
+        if (AppNetState(s) == 4) break;
+        WaitMs(20);
+    }
+}
+AppNetClose(s);
+</code></pre>
+<ul>
+<li>2 sockets, 1 KB RX + 1 KB TX each, stop-and-wait.</li>
+<li><code>AppNetState</code>: 0 idle, 1 DNS, 2 connecting, 3 open, 4 closed, 5 error.</li>
+<li><code>AppNetRecv</code> returns 0 when nothing is available and drops bytes above <code>max</code>.</li>
+<li><code>AppNetSend</code> returns 0 on success, negative on error.</li>
+<li><code>AppNetFeatures()</code> reports module support.</li>
+</ul>
+<h2 id="build">Build<a class="headerlink" href="#build" title="Permanent link"></a></h2>
+<p><code>apps_sdk/build.sh</code> compiles every <code>.c</code>/<code>.cpp</code> in the app folder, links it at
+<code>0x100A0000</code> with <code>app.ld</code>, and writes <code>&lt;folder&gt;/app.bin</code>.</p>
+<pre><code class="language-bash">./build.sh examples/hello
+</code></pre>
+<p>The app image is limited to <strong>252 KB</strong>. App RAM ends at <code>0x20037800</code>; the
+launcher handoff and the module's 4 KB network buffer sit above it.</p>
+<h3 id="package-pap">Package (<code>.pap</code>)<a class="headerlink" href="#package-pap" title="Permanent link"></a></h3>
+<pre><code class="language-bash">python3 pack.py examples/hello
+</code></pre>
+<ul>
+<li>Container magic <code>PAPP</code>, uncompressed.</li>
+<li>Files must be 8.3 (<code>APP.BIN</code>, <code>APP.INI</code>, assets).</li>
+<li>The package file extension is <code>.pap</code> (3 characters) because the PicoPad's FAT
+  cannot handle 4-character extensions.</li>
+<li><code>config.ini</code> and <code>data/</code> are not packed.</li>
+</ul>
+<h2 id="crashes-and-debugging">Crashes and debugging<a class="headerlink" href="#crashes-and-debugging" title="Permanent link"></a></h2>
+<ul>
+<li>A hard fault or unhandled IRQ shows a full-screen BSOD with IRQ, PC, CFSR,
+  HFSR and registers.</li>
+<li>Press <strong>Y</strong> to save <code>/crash/CRASHnnn.TXT</code> on the SD card.</li>
+<li>Press <strong>A</strong> to return to the launcher, <strong>X</strong> to restart.</li>
+<li>The BSOD uses direct display writes, so it works even if the app's runtime is
+  broken.</li>
+</ul>
+<p>For normal debugging, draw state on screen or write a file to the SD card.
+There is no serial console in apps.</p>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link"></a></h2>
+<ul>
+<li><a href="https://github.com/martinsuii/Picodeck/tree/main/apps_sdk/examples/hello"><code>examples/hello</code></a> — drawing, WiFi status, scan.</li>
+<li><a href="https://github.com/martinsuii/Picodeck/tree/main/apps_sdk/examples/wifiscan"><code>examples/wifiscan</code></a> — status, scan, connect.</li>
+<li><a href="https://github.com/martinsuii/Picodeck/tree/main/apps_sdk/examples/nettest"><code>examples/nettest</code></a> — raw TCP, HTTP-style GET.</li>
+</ul>
+<h2 id="distribution">Distribution<a class="headerlink" href="#distribution" title="Permanent link"></a></h2>
+<p>For a local app, copy the folder to <code>/Apps</code>. For a single file, copy the
+<code>.pap</code>. To publish in the online store, host the <code>.pap</code> and add it to the
+catalogue index; see <a href="contributing.html#app-store">Contributing → App store</a>.</p>
+<h2 id="limits">Limits<a class="headerlink" href="#limits" title="Permanent link"></a></h2>
+<ul>
+<li>252 KB code, 8.3 file names, 640 KB shared game/WiFi area.</li>
+<li>No TLS, no raw sockets beyond 2, 4 KB shared network buffer.</li>
+<li>No MPU/sandbox. A bad app can write flash; recovery and BOOTSEL are the
+  safety net.</li>
+<li>The launcher snapshot for no-reboot exit writes ~227 KB to flash per launch.</li>
+</ul>
+    </article>
+    <nav class="pagenav">
+  <a class="page-prev" href="using.html"><span>Previous</span><strong>Using PicoDeck</strong></a>
+  <a class="page-next" href="contributing.html"><span>Next</span><strong>Contributing</strong></a>
+</nav>
+  </main>
+
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <div class="toc-inner">
+<ul>
+<li><a href="#quick-start">Quick start</a></li>
+<li><a href="#app-folder">App folder</a></li>
+<li><a href="#code">Code</a></li>
+<li><a href="#what-you-can-use">What you can use</a><ul>
+<li><a href="#runtime-rules-important">Runtime rules (important)</a></li>
+</ul>
+</li>
+<li><a href="#app-api">App API</a><ul>
+<li><a href="#entry-and-system">Entry and system</a></li>
+<li><a href="#config-and-data">Config and data</a></li>
+<li><a href="#theme">Theme</a></li>
+<li><a href="#open-with-app">Open with app</a></li>
+<li><a href="#wifi">WiFi</a></li>
+<li><a href="#http-get">HTTP GET</a></li>
+<li><a href="#raw-tcp">Raw TCP</a></li>
+</ul>
+</li>
+<li><a href="#build">Build</a><ul>
+<li><a href="#package-pap">Package (.pap)</a></li>
+</ul>
+</li>
+<li><a href="#crashes-and-debugging">Crashes and debugging</a></li>
+<li><a href="#examples">Examples</a></li>
+<li><a href="#distribution">Distribution</a></li>
+<li><a href="#limits">Limits</a></li>
+</ul>
+</div>
+
+  </aside>
+</div>
+
+<footer class="footer">
+  <div>PicoDeck <strong>v1.0.0</strong> · docs</div>
+  <div class="muted">Derived from <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener">PicoPad Arcade Launcher by MakerClassCZ</a></div>
+</footer>
+
+<div class="backdrop" id="backdrop"></div>
+<script src="app.js"></script>
+</body>
+</html>

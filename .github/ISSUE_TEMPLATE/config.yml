@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://martinsuii.github.io/Picodeck/
+    about: Install, update, games, WiFi, apps, companion and contributing.
+  - name: Making apps
+    url: https://martinsuii.github.io/Picodeck/apps.html
+    about: App SDK, API, packages and examples.
+  - name: Releases
+    url: https://github.com/martinsuii/Picodeck/releases
+    about: Install and update images, desktop, AppImage and Android builds.
+  - name: App catalogue
+    url: http://assets.msuii.dev/picopadapps/
+    about: The PicoDeck app store index.

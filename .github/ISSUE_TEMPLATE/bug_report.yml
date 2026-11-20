@@ -1,0 +1,108 @@
+name: Bug report
+description: Report a launcher, game, WiFi, app, store, recovery or companion problem.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please include the version and a crash log when
+        possible. Do **not** paste your WiFi password or the contents of
+        `/wifi.cnf`.
+
+        Docs: https://github.com/martinsuii/Picodeck/tree/main/docs
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Launcher / menu
+        - Games / MakeCode Arcade
+        - Native WiFi module
+        - Custom apps
+        - App Store
+        - Companion app
+        - Recovery / flashing
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: PicoDeck version
+      description: SETTINGS → System Info, or the release tag.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: module
+    attributes:
+      label: WiFi module version
+      description: SETTINGS → WIFI → Status, or leave blank if not installed.
+      placeholder: "1.2.20"
+  - type: dropdown
+    id: hardware
+    attributes:
+      label: PicoPad hardware
+      options:
+        - PicoPad Arcade (Pico W, native WiFi)
+        - PicoPad Arcade (no Pico W)
+        - Other PicoPad
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: sd
+    attributes:
+      label: SD card
+      description: Size, file system, and whether it was formatted on a PC or with Prepare SD.
+      placeholder: "32 GB FAT32, Prepare SD"
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      placeholder: A short summary of the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Boot...
+        2. Open...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: crashlog
+    attributes:
+      label: Crash log
+      description: |
+        If a BSOD appeared, press **Y** and paste or attach
+        `/crash/CRASHnnn.TXT`. Also include the BSOD stop code/stage.
+      render: text
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Photos, the last file you flashed, apps installed, etc.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues for the same problem.
+          required: true
+        - label: I removed WiFi passwords and other secrets.
+          required: true

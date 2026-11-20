@@ -24,6 +24,15 @@ launcher, tool box and small app computer.
   without opening a special screen on the PicoPad.
 - Keeps a separate recovery image so a broken launcher can still be recovered.
 
+## Documentation
+
+- **[Using PicoDeck](https://martinsuii.github.io/Picodeck/using.html)** — install, update, games, WiFi,
+  apps, store, companion, recovery and troubleshooting.
+- **[Making apps](https://martinsuii.github.io/Picodeck/apps.html)** — app SDK, API, `.pap` packages,
+  examples and limits.
+- **[Contributing](https://martinsuii.github.io/Picodeck/contributing.html)** — builds, flash layout, safety rules,
+  testing and releases.
+
 ## Features
 
 ### Games
@@ -250,6 +259,9 @@ Linux AppImage; the config lives in `companion/package.json`.
 ├── apps_sdk/            app API, linker script, packer and examples
 ├── companion/           desktop/Android companion, server, web UI
 ├── themes/              example themes and theme format docs
+├── docs/                static HTML docs site
+├── docs_src/            markdown docs source + build.py
+├── .github/             issue forms and PR template
 ├── picolibsdk/          vendored, pruned PicoLibSDK (picopad10)
 └── setup_env.sh/.bat    PICO_ROOT_PATH setup
 ```

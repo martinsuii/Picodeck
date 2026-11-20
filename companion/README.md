@@ -16,9 +16,9 @@ There are three ways to run it:
 | `desktop/` | Standalone Electron app around the same server and UI | Linux desktop |
 | `android/` | Standalone WebView app with a native Java bridge | Android phone/tablet |
 
-The firmware side is the **Companion Link** app in the launcher's TOOLS menu.
-It is included in release images only. The dev 1 MB/2 MB builds leave it out
-because they do not have room for it.
+The PicoPad exposes USB CDC at boot and runs the companion service in the
+background, so the desktop/Android app works without opening the **Companion
+Link** screen. That screen is still available in TOOLS for diagnostics.
 
 ---
 
