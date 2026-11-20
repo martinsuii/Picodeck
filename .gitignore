@@ -32,3 +32,13 @@ __pycache__/
 # macOS
 .AppleDouble
 .LSOverride
+
+# Packaged apps / generated data
+*.pap
+*.sym
+*.log
+node_modules/
+companion/dist/
+companion/android/**/build/
+companion/android/.gradle/
+companion/config.json

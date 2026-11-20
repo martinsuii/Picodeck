@@ -1,0 +1,4 @@
+# id|version|size|url|name
+hello|1.0|14014|hello.pap|Hello
+wifiscan|1.0|15090|wifiscan.pap|WiFi Scan
+nettest|1.0|15609|nettest.pap|TCP Test

@@ -329,7 +329,7 @@ typedef struct PACKED {
 #define HID_USAGE_PAGE_SCALE		0x8d
 #define HID_USAGE_PAGE_MSR		0x8e
 #define HID_USAGE_PAGE_CAMERA		0x90
-#define HID_USAGE_PAGE_ARCADE		0x91
+#define HID_USAGE_PAGE_PICODECK		0x91
 #define HID_USAGE_PAGE_FIDO		0xF1D0	// FIDO alliance HID usage page
 #define HID_USAGE_PAGE_VENDOR		0xFF00	// 0xFF00 - 0xFFFF
 

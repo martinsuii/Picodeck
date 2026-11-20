@@ -1,12 +1,12 @@
 // ****************************************************************************
 //
-//                  PicoPad Arcade Launcher — flash dialog
+//                  PicoDeck — flash dialog
 //
 //   UX:
 //     UP/DOWN: navigate between options and the FLASH button
 //     A: toggle option / confirm flash on FLASH button
-//     X: quick Arcade preset + immediate flash
-//     B: cancel
+//     Y: raw preset
+//     X: cancel
 //
 // ****************************************************************************
 
@@ -22,9 +22,9 @@
 #define DLG_BTN_GAP       12   // vertical spacing between last option and FLASH button
 #define DLG_FOOTER_Y      218
 
-// Number of options (= preserve, st7789, palette, cf2)
-#define FLASH_OPT_COUNT   4
-#define FLASH_BTN_INDEX   FLASH_OPT_COUNT  // = 4
+// Number of options (= preserve, st7789, palette, cf2, swap Y/B)
+#define FLASH_OPT_COUNT   5
+#define FLASH_BTN_INDEX   FLASH_OPT_COUNT  // = 5
 
 // ---------------------------------------------------------------------------
 // Format helpers
@@ -131,6 +131,7 @@ static void RenderDialog(const char* path, const Uf2Info* info,
             {"Patch ST7789 init",          opts->apply_st7789_init},
             {"Patch palette LUT",          opts->apply_palette_lut},
             {"Write CF2 config",           opts->apply_cf2},
+            {"Swap Y/B buttons",           opts->swap_yb},
         };
 
         for (int i = 0; i < FLASH_OPT_COUNT; i++)
@@ -169,15 +170,15 @@ static void RenderDialog(const char* path, const Uf2Info* info,
     // Footer
     DrawRect(20, DLG_FOOTER_Y - 4, WIDTH - 40, 1, COL_GRAY);
     if (info->kind == UF2_TARGET_FLASH) {
-        const char* hint = "A: OK   X: Arcade   Y: Raw   B: Cancel";
+        const char* hint = "A: OK   Y: Raw   X: Cancel";
         DrawText(hint, (WIDTH - (int)strlen(hint) * FONTW) / 2,
                  DLG_FOOTER_Y, COL_LTGRAY);
     } else if (info->kind == UF2_TARGET_RAM) {
-        const char* hint = "A: OK   B: Cancel";
+        const char* hint = "A: OK   X: Cancel";
         DrawText(hint, (WIDTH - (int)strlen(hint) * FONTW) / 2,
                  DLG_FOOTER_Y, COL_LTGRAY);
     } else {
-        const char* hint = "Unknown target — B: Cancel";
+        const char* hint = "Unknown target — X: Cancel";
         DrawText(hint, (WIDTH - (int)strlen(hint) * FONTW) / 2,
                  DLG_FOOTER_Y, COL_RED);
     }
@@ -196,7 +197,7 @@ DialogResult FlashDialogShow(const char* path, const Uf2Info* info,
                      ? FLASH_OPT_COUNT + 1   // 4 options + FLASH button
                      : 0;
 
-    // Pre-select FLASH button so quickly pressing A confirms (= fast Arcade flow)
+    // Pre-select FLASH button so quickly pressing A confirms (= fast PicoDeck flow)
     int selected = (info->kind == UF2_TARGET_FLASH) ? FLASH_BTN_INDEX : 0;
     Bool need_redraw = True;
 
@@ -237,6 +238,7 @@ DialogResult FlashDialogShow(const char* path, const Uf2Info* info,
                         &opts->apply_st7789_init,
                         &opts->apply_palette_lut,
                         &opts->apply_cf2,
+                        &opts->swap_yb,
                     };
                     *flags[selected] = !*flags[selected];
                     need_redraw = True;
@@ -244,19 +246,8 @@ DialogResult FlashDialogShow(const char* path, const Uf2Info* info,
             }
             break;
 
-        case KEY_X:
-            // Quick: Arcade preset + immediate flash
-            if (info->kind == UF2_TARGET_FLASH) {
-                opts->preserve_launcher = True;
-                opts->apply_st7789_init = True;
-                opts->apply_palette_lut = True;
-                opts->apply_cf2         = True;
-                return DLG_PROCEED;
-            }
-            break;
-
         case KEY_Y:
-            // Quick: Raw preset (no Arcade patches, just preserve launcher).
+            // Quick: Raw preset (no PicoDeck patches, just preserve launcher).
             // Does NOT auto-flash — lets user inspect and confirm with A.
             if (info->kind == UF2_TARGET_FLASH) {
                 opts->preserve_launcher = True;
@@ -267,7 +258,7 @@ DialogResult FlashDialogShow(const char* path, const Uf2Info* info,
             }
             break;
 
-        case KEY_B:
+        case KEY_X:
             return DLG_CANCEL;
         }
     }

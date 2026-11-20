@@ -1,6 +1,6 @@
 // ****************************************************************************
 //
-//                    PicoPad Arcade Launcher — main entry
+//                    PicoDeck — main entry
 //
 //   M2: Initializes display, hands off to menu state machine.
 //   Menu provides: PLAY, LOAD from SD, USB CARD READER, SETTINGS,
@@ -10,6 +10,13 @@
 
 #include "../include.h"
 #include "menu.h"
+#include "settings.h"
+#include "native_wifi.h"
+
+// Version tag embedded in the image so "Update from SD" can read the version
+// from a staged update without relying on long filenames.
+extern "C" __attribute__((used, section(".rodata")))
+const char LauncherVersionTag[] = "AMTV" LAUNCHER_VERSION_STR;
 
 int main()
 {
@@ -18,6 +25,10 @@ int main()
     // padding). Explicitly selecting the 8x8 font also lets --gc-sections
     // strip the unused FontBold8x16 (= ~4 KB rodata saving).
     SelFont8x8();
+
+    // Apply the persisted backlight.
+    SettingsLoad();
+    DispBacklight(SettingsBacklight());
 
     MenuRun();
     return 0;

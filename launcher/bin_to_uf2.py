@@ -1,10 +1,11 @@
 """
 Convert flash binary to UF2, skipping all-0xFF (empty) 256-byte pages.
 
-For M1 launcher layout, the bin file spans 0x10000000..0x100F0000+launcher_size,
-with a large gap (0x10000100..0x100EFFFF) filled with 0xFF. This tool produces
-a UF2 that only includes pages with actual data, drastically reducing UF2 size
-from ~960 KB to ~125 KB.
+For M1 launcher layout, the bin file spans 0x10000000..launcher_end, with a
+large gap (0x10000100..0x100E0000) filled with 0xFF. This tool produces a UF2
+that only includes pages with actual data, drastically reducing UF2 size from
+~1 MB to ~200 KB. The install image additionally carries the recovery image
+at 0x100FB000 (1 MB layout) or 0x101FB000 (2 MB layout).
 
 Usage:
   python bin_to_uf2.py <input.bin> <output.uf2> [--base 0x10000000] [--family 0xE48BFF56]
@@ -148,8 +149,9 @@ def main():
                         help="UF2 family ID (default: 0xE48BFF56 / RP2040)")
     parser.add_argument("--skip-below", type=parse_int, default=None,
                         help="skip all blocks targeting addresses below this "
-                             "(use 0x100F0000 for update-only UF2 that preserves "
-                             "previously flashed game)")
+                             "(use the launcher base, e.g. 0x100E0000, for an "
+                             "update-only UF2 that preserves the flashed game, "
+                             "boot2 and recovery image)")
     args = parser.parse_args()
 
     if not args.input.exists():

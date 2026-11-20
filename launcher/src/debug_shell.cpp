@@ -1,6 +1,6 @@
 // ****************************************************************************
 //
-//             PicoPad Arcade Launcher — USB CDC debug shell
+//             PicoDeck — USB CDC debug shell
 //
 //   Connect to PicoPad as a USB CDC serial device (= COMx on Windows,
 //   /dev/ttyACMx on Linux/macOS), 115200 8N1. Type 'help' for commands.
@@ -8,15 +8,31 @@
 // ****************************************************************************
 
 #include "../include.h"
+#include "native_wifi.h"
 #if LAUNCHER_HAS_DEBUG_SHELL
 #include "debug_shell.h"
 #include "uf2_parser.h"
 #include "arcade_patches.h"
-#include "boot2_embedded.h"
 #include "flasher.h"
 
 extern "C" void RuntimeTerm(void);
 extern FRAMETYPE ALIGNED FrameBuf[FRAMESIZE];
+extern "C" u8 __bss_end__[];
+extern "C" u8 __StackLimit[];
+extern "C" u8 __flash_binary_end[];
+
+// CRC32 (IEEE 802.3, reflected) for the `crc` command.
+static u32 crc32_buf(const u8* p, u32 len)
+{
+    u32 crc = 0xFFFFFFFFu;
+    while (len--)
+    {
+        crc ^= *p++;
+        for (int i = 0; i < 8; i++)
+            crc = (crc >> 1) ^ (0xEDB88320u & (u32)(-(int)(crc & 1)));
+    }
+    return ~crc;
+}
 
 // ---------------------------------------------------------------------------
 // Output helpers (printf goes to USB CDC via PicoLibSDK USE_USB_STDIO)
@@ -147,36 +163,63 @@ static void hexdump(const u8* data, u32 base, u32 len)
 
 static void cmd_help(void)
 {
-    p_str("Commands (all <len>/<addr>/<offset> are HEX):\r\n");
-    p_str("  info                              launcher info\r\n");
+    p_str("Commands (<addr>/<offset>/<len> are HEX unless noted):\r\n");
+    p_str("  info                              launcher + game info\r\n");
+    p_str("  battery                           battery voltage + temp\r\n");
+    p_str("  sys                               CPU / RAM / USB info\r\n");
+    p_str("  sd                                SD card info\r\n");
     p_str("  ls <path>                         list directory\r\n");
     p_str("  filesize <path>                   show file size\r\n");
+    p_str("  cat <path>                        print a text file\r\n");
+    p_str("  mkdir <path>                      create directory\r\n");
+    p_str("  rm <path>                         delete file/folder\r\n");
+    p_str("  mv <src> <dst>                    rename/move\r\n");
+    p_str("  crc <path>                        CRC32 of a file\r\n");
     p_str("  dump <addr> <len>                 hex+ascii memory\r\n");
     p_str("  erase <addr>                      erase 4 KB flash sector\r\n");
+    p_str("  gpio <pin> <0|1>                  set a GPIO output\r\n");
     p_str("  readraw <path> <offset> <len>     read raw bytes (max 256)\r\n");
     p_str("  readuf2 <path> <block>            read one UF2 block (decimal)\r\n");
     p_str("  scan <path> <hex bytes>           find sequence in file\r\n");
+    p_str("  fscan <hex bytes>                 find sequence in flashed game\r\n");
     p_str("  verify <path>                     check UF2 block_no's match\r\n");
     p_str("  flash <path>                      run full flasher on UF2\r\n");
+    p_str("  echo <text>                       print text\r\n");
+    p_str("  clear                             clear the terminal\r\n");
     p_str("  bootsel                           reboot to USB MSC bootsel\r\n");
     p_str("  reset                             soft reset\r\n");
     p_str("  exit                              return to menu\r\n");
+    p_str("Line editing: arrows, Home/End, Tab-complete, Up/Down history,\r\n");
+    p_str("Ctrl+U clear line, Ctrl+C cancel, Ctrl+L clear screen.\r\n");
 }
 
 static void cmd_info(void)
 {
-    p_str("PicoPad Arcade Launcher debug shell\r\n");
-    p_str("  flash size: ");
-    p_hex32(0x10100000 - 0x10000000);
+    p_str("PicoDeck debug shell\r\n");
+    p_str("  game region: 0x10000100..");
+    p_hex32(LAUNCHER_GAME_HI - 1);
     p_eol();
-    p_str("  game region: 0x10000100..0x100EFFFF\r\n");
-    p_str("  launcher: 0x100F0000..0x100FBFFF\r\n");
-    p_str("  CF2: 0x100FF000\r\n");
+    p_str("  launcher: ");
+    p_hex32(LAUNCHER_FLASH_BASE);
+    p_str("..");
+    p_hex32((u32)__flash_binary_end);
+    p_eol();
+    p_str("  recovery: ");
+    p_hex32(LAUNCHER_RECOVERY_BASE);
+    p_str("..");
+    p_hex32(LAUNCHER_STATE_ADDR - 1);
+    p_eol();
+    p_str("  settings: ");
+    p_hex32(LAUNCHER_STATE_ADDR);
+    p_eol();
+    p_str("  CF2: ");
+    p_hex32(LAUNCHER_CF2_ADDR);
+    p_eol();
     if (*(const volatile u32*)0x100001C0u == 0x44415050u) {
         p_str("  flashed: PicoLibSDK app/loader (PPAD magic @ 0x100001C0)\r\n");
     } else {
         char name[40];
-        if (ArcadeReadName(name, sizeof(name))) {
+        if (PicoDeckReadName(name, sizeof(name))) {
             p_str("  game name: ");
             p_str(name);
             p_eol();
@@ -184,6 +227,228 @@ static void cmd_info(void)
             p_str("  game name: (not found)\r\n");
         }
     }
+}
+
+static void cmd_battery(void)
+{
+    int mv = LauncherBatMv();
+    int pct = (mv - BATTERY_EMPTY_INT) * 100
+              / (BATTERY_FULL_INT - BATTERY_EMPTY_INT);
+    if (pct < 0) pct = 0;
+    if (pct > 100) pct = 100;
+    p_str("Battery: ");
+    p_dec((u32)mv);
+    p_str(" mV  ");
+    p_dec((u32)pct);
+    p_str("%\r\n");
+
+    float t = ADC_Temp();
+    int t10 = (int)(t * 10.0f + (t >= 0.0f ? 0.5f : -0.5f));
+    int fr = t10 % 10;
+    if (fr < 0) fr = -fr;
+    p_str("Temp: ");
+    p_dec((u32)(t10 / 10));
+    p_str(".");
+    p_dec((u32)fr);
+    p_str(" C\r\n");
+}
+
+static void cmd_sys(void)
+{
+    p_str("CPU: ");
+    p_dec(ClockGetHz(clk_sys) / 1000000u);
+    p_str(" MHz\r\n");
+
+    u32 free_ram = (u32)(__StackLimit - __bss_end__);
+    p_str("RAM free: ");
+    p_dec(free_ram / 1024u);
+    p_str(" KB\r\n");
+
+    p_str("Launcher flash: ");
+    p_dec((u32)(__flash_binary_end - (u8*)LAUNCHER_FLASH_BASE) / 1024u);
+    p_str(" KB\r\n");
+
+    p_str("USB CDC: ");
+    p_str(UsbDevCdcIsMounted() ? "mounted" : "not mounted");
+    p_eol();
+}
+
+static void cmd_sd(void)
+{
+    if (!DiskValid())
+    {
+        p_str("No SD card\r\n");
+        return;
+    }
+    p_str("SD: ");
+    p_str(GetSDName());
+    p_eol();
+    p_str("  size: ");
+    p_dec(SDMediaSize() / 2048u);
+    p_str(" MB\r\n");
+    p_str("  free: ");
+    p_dec(DiskFreeKB() / 1024u);
+    p_str(" MB\r\n");
+}
+
+static void cmd_gpio(char* args)
+{
+    char* p = args;
+    u32 pin = parse_dec(&p);
+    u32 val = parse_dec(&p);
+    if (pin > 29) { p_str("Usage: gpio <pin 0..29> <0|1>\r\n"); return; }
+    GPIO_Init((int)pin);
+    GPIO_DirOut((int)pin);
+    GPIO_Out((int)pin, (int)val);
+    p_str("GPIO");
+    p_dec(pin);
+    p_str(" = ");
+    p_dec(val);
+    p_eol();
+}
+
+static void cmd_crc(char* args)
+{
+    char* path = skip_ws(args);
+    sFile file;
+    FileInit(&file);
+    if (!FileOpen(&file, path)) { p_str("Cannot open "); p_str(path); p_eol(); return; }
+
+    u32 size = FileSize(&file);
+    u32 crc = 0xFFFFFFFFu;
+    u32 total = 0;
+    u8 buf[512];
+    while (total < size)
+    {
+        u32 n = FileRead(&file, buf, sizeof(buf));
+        if (n == 0) break;
+        for (u32 i = 0; i < n; i++)
+        {
+            crc ^= buf[i];
+            for (int k = 0; k < 8; k++)
+                crc = (crc >> 1) ^ (0xEDB88320u & (u32)(-(int)(crc & 1)));
+        }
+        total += n;
+    }
+    FileClose(&file);
+
+    p_str("CRC32 ");
+    p_hex32(~crc);
+    p_str("  (");
+    p_dec(total);
+    p_str(" bytes)\r\n");
+}
+
+static void cmd_mkdir(char* args)
+{
+    char* path = skip_ws(args);
+    p_str(DirCreate(path) ? "OK\r\n" : "Failed\r\n");
+}
+
+static void cmd_rm(char* args)
+{
+    char* path = skip_ws(args);
+    p_str(FileDelete(path) ? "OK\r\n" : "Failed\r\n");
+}
+
+static void cmd_mv(char* args)
+{
+    char* p = args;
+    char* src = skip_ws(p);
+    char* sp = src;
+    while (*sp && *sp != ' ' && *sp != '\t') sp++;
+    if (!*sp) { p_str("Usage: mv <src> <dst>\r\n"); return; }
+    *sp = 0;
+    char* dst = skip_ws(sp + 1);
+    p_str(FileMove(src, dst) ? "OK\r\n" : "Failed\r\n");
+}
+
+static void cmd_cat(char* args)
+{
+    char* path = skip_ws(args);
+    sFile file;
+    FileInit(&file);
+    if (!FileOpen(&file, path)) { p_str("Cannot open "); p_str(path); p_eol(); return; }
+
+    u8 buf[128];
+    u32 n;
+    while ((n = FileRead(&file, buf, sizeof(buf))) > 0)
+    {
+        for (u32 i = 0; i < n; i++)
+        {
+            char c = (char)buf[i];
+            if (c == '\n') p_eol();
+            else if (c == '\r') continue;
+            else if (c >= 32 && c < 127) UsbDevCdcWriteChar(c);
+            else UsbDevCdcWriteChar('.');
+        }
+    }
+    FileClose(&file);
+    p_eol();
+}
+
+static void cmd_echo(char* args)
+{
+    p_str(skip_ws(args));
+    p_eol();
+}
+
+static void cmd_clear(void)
+{
+    p_str("\x1b[2J\x1b[H");
+}
+
+// Scan the flashed game region for a hex byte sequence.
+// Usage: fscan EF 03 03 80 02 CF 07   (or concatenated hex)
+static void cmd_fscan(char* args)
+{
+    char* p = args;
+    u8 needle[32];
+    int needle_len = 0;
+    char* h = skip_ws(p);
+    while (*h && needle_len < 32)
+    {
+        while (*h == ' ' || *h == '\t') h++;
+        if (!*h) break;
+        u32 b = 0;
+        int got = 0;
+        while (*h && got < 2)
+        {
+            char c = *h;
+            int d;
+            if (c >= '0' && c <= '9') d = c - '0';
+            else if (c >= 'a' && c <= 'f') d = c - 'a' + 10;
+            else if (c >= 'A' && c <= 'F') d = c - 'A' + 10;
+            else break;
+            b = (b << 4) | (u32)d;
+            h++;
+            got++;
+        }
+        if (got == 0) break;
+        needle[needle_len++] = (u8)b;
+    }
+    if (needle_len == 0) { p_str("Usage: fscan <hex bytes>\r\n"); return; }
+
+    p_str("Flash scan (");
+    p_dec(needle_len);
+    p_str(" B):");
+    for (int i = 0; i < needle_len; i++) { p_str(" "); p_hex_byte(needle[i]); }
+    p_eol();
+
+    const u8* base = (const u8*)0x10000100u;
+    u32 size = LAUNCHER_GAME_HI - 0x10000100u;
+    int matches = 0;
+    for (u32 off = 0; off + (u32)needle_len <= size; off++)
+    {
+        if (memcmp(base + off, needle, (u32)needle_len) == 0)
+        {
+            u32 addr = 0x10000100u + off;
+            p_str("  match @ "); p_hex32(addr); p_eol();
+            hexdump(base + (off & ~0xFu), addr & ~0xFu, 32);
+            if (++matches >= 8) { p_str("  (stopping)\r\n"); break; }
+        }
+    }
+    p_str("Done. "); p_dec(matches); p_str(" matches\r\n");
 }
 
 static void cmd_dump(char* args)
@@ -209,7 +474,9 @@ static void cmd_erase(char* args)
     p_str("Erasing sector ");
     p_hex32(sec_addr);
     p_eol();
+    NativeWifiPause();
     FlashErase(sec_addr - 0x10000000u, 4096);
+    NativeWifiResume();
     p_str("Done\r\n");
 }
 
@@ -537,6 +804,7 @@ static void cmd_flash(char* args)
     opts.apply_st7789_init = True;
     opts.apply_palette_lut = True;
     opts.apply_cf2 = True;
+    opts.swap_yb = False;
 
     p_str("Flashing... (resets on done; press A on device to confirm)\r\n");
     FlashResult r = FlasherWriteFlash(path, &info, &opts);
@@ -584,15 +852,27 @@ static void process_line(char* line)
     #define EQ(s) (StrComp(cmd, (s)) == 0)
     if (EQ("help") || EQ("?")) cmd_help();
     else if (EQ("info")) cmd_info();
+    else if (EQ("battery") || EQ("bat")) cmd_battery();
+    else if (EQ("sys")) cmd_sys();
+    else if (EQ("sd")) cmd_sd();
     else if (EQ("dump")) cmd_dump(args);
     else if (EQ("erase")) cmd_erase(args);
+    else if (EQ("gpio")) cmd_gpio(args);
+    else if (EQ("crc")) cmd_crc(args);
     else if (EQ("readuf2")) cmd_readuf2(args);
     else if (EQ("readraw")) cmd_readraw(args);
     else if (EQ("filesize")) cmd_filesize(args);
-    else if (EQ("ls")) cmd_ls(args);
+    else if (EQ("ls") || EQ("dir")) cmd_ls(args);
+    else if (EQ("cat")) cmd_cat(args);
+    else if (EQ("mkdir")) cmd_mkdir(args);
+    else if (EQ("rm")) cmd_rm(args);
+    else if (EQ("mv")) cmd_mv(args);
     else if (EQ("verify")) cmd_verify(args);
     else if (EQ("scan")) cmd_scan(args);
+    else if (EQ("fscan")) cmd_fscan(args);
     else if (EQ("flash")) cmd_flash(args);
+    else if (EQ("echo")) cmd_echo(args);
+    else if (EQ("clear") || EQ("cls")) cmd_clear();
     else if (EQ("bootsel")) cmd_bootsel();
     else if (EQ("reset")) cmd_reset();
     else if (EQ("exit") || EQ("quit")) {
@@ -607,6 +887,106 @@ static void process_line(char* line)
     #undef EQ
 }
 
+// ---------------------------------------------------------------------------
+// Line editing / history / tab completion
+// ---------------------------------------------------------------------------
+
+#define HIST_MAX 8
+static char g_hist[HIST_MAX][LINE_MAX];
+static int  g_hist_n = 0;
+static int  g_hist_idx = 0;
+static char g_hist_cur[LINE_MAX];
+
+static const char* const ShellCmds[] = {
+    "help", "info", "battery", "sys", "sd", "ls", "filesize", "cat",
+    "mkdir", "rm", "mv", "crc", "dump", "fscan", "erase", "gpio", "readraw",
+    "readuf2", "scan", "verify", "flash", "echo", "clear", "bootsel",
+    "reset", "exit"
+};
+#define SHELL_CMD_N ((int)(sizeof(ShellCmds) / sizeof(ShellCmds[0])))
+
+// Redraw the prompt + line and leave the cursor at `pos`.
+static void shell_redraw(const char* line, int len, int pos)
+{
+    p_str("\r> ");
+    for (int i = 0; i < len; i++) UsbDevCdcWriteChar(line[i]);
+    p_str("\x1b[K");                       // erase to end of line
+    for (int i = len; i > pos; i--) p_str("\b");
+}
+
+static int shell_read_timeout(u32 ms)
+{
+    u32 start = Millis();
+    while (UsbDevCdcReadReady() == 0)
+    {
+        if ((u32)(Millis() - start) > ms) return -1;
+        WaitMs(1);
+    }
+    return (u8)UsbDevCdcReadChar();
+}
+
+static void shell_hist_add(const char* line)
+{
+    if (line[0] == 0) return;
+    if (g_hist_n > 0 && StrComp(g_hist[g_hist_n - 1], line) == 0) return;
+
+    if (g_hist_n < HIST_MAX)
+    {
+        strcpy(g_hist[g_hist_n], line);
+        g_hist_n++;
+    }
+    else
+    {
+        for (int i = 1; i < HIST_MAX; i++) strcpy(g_hist[i - 1], g_hist[i]);
+        strcpy(g_hist[HIST_MAX - 1], line);
+    }
+    g_hist_idx = g_hist_n;
+}
+
+static void shell_tab(char* line, int* plen, int* ppos)
+{
+    int len = *plen;
+    if (len == 0) return;
+
+    // Only complete the first word.
+    int i;
+    for (i = 0; i < len && line[i] != ' '; i++) {}
+    if (i < len) return;
+
+    int matches = 0, last = -1;
+    for (int c = 0; c < SHELL_CMD_N; c++)
+    {
+        const char* cmd = ShellCmds[c];
+        int k = 0;
+        while (k < len && cmd[k] && cmd[k] == line[k]) k++;
+        if (k == len) { matches++; last = c; }
+    }
+
+    if (matches == 1)
+    {
+        strcpy(line, ShellCmds[last]);
+        *plen = (int)StrLen(line);
+        line[*plen] = ' ';
+        (*plen)++;
+        line[*plen] = 0;
+        *ppos = *plen;
+        shell_redraw(line, *plen, *ppos);
+    }
+    else if (matches > 1)
+    {
+        p_eol();
+        for (int c = 0; c < SHELL_CMD_N; c++)
+        {
+            const char* cmd = ShellCmds[c];
+            int k = 0;
+            while (k < len && cmd[k] && cmd[k] == line[k]) k++;
+            if (k == len) { p_str(cmd); p_str("  "); }
+        }
+        p_eol();
+        shell_redraw(line, *plen, *ppos);
+    }
+}
+
 Bool g_shell_exit = False;
 
 void DebugShellRun(void)
@@ -619,70 +999,140 @@ void DebugShellRun(void)
     //  disable to allow direct UsbDevCdc* calls without printf wrappers.)
     UsbDevInit(&UsbDevCdcSetupDesc);
 
-    // Show on display
+    // Show on display (raw / monochrome)
     DrawClear();
-    DrawText2("Debug shell", 70, 30, COL_YELLOW);
-    DrawText("Connect via USB serial:", 20, 80, COL_LTGRAY);
-    DrawText("  115200 8N1, COMx / ttyACMx", 20, 100, COL_WHITE);
-    DrawText("Waiting for host...", 20, 130, COL_WHITE);
-    DrawText("Press B on device to abort", 20, 200, COL_GRAY);
+    DrawText("debug shell", 8, 8, COL_WHITE);
+    DrawText("USB serial 115200 8N1", 8, 22, COL_GRAY);
+    DrawRect(8, 34, WIDTH - 16, 1, COL_GRAY);
+    DrawText("waiting for host...", 8, 48, COL_WHITE);
+    DrawText("x: abort", 8, HEIGHT - 14, COL_GRAY);
     DispUpdate();
 
     // Mount SD if not already
     DiskAutoMount();
 
     // Wait for host enumeration + DTR (terminal opens the port).
-    // Show progress dots and allow B to bail out.
+    // Show progress dots and allow X to bail out.
     {
         int dots = 0;
         while (!UsbDevCdcIsMounted()) {
-            if (KeyGet() == KEY_B) return;
+            if (KeyGet() == KEY_X) return;
             WaitMs(100);
             if ((++dots % 5) == 0) {
-                DrawTextBg(" ", 20 + (dots/5)*8 % 200, 150, COL_WHITE, COL_BLACK);
+                DrawTextBg(" ", 8 + (dots/5)*8 % 200, 64, COL_WHITE, COL_BLACK);
                 DispUpdate();
             }
         }
     }
 
-    DrawTextBg("Connected!                  ", 20, 130, COL_GREEN, COL_BLACK);
+    DrawTextBg("connected                ", 8, 48, COL_WHITE, COL_BLACK);
     DispUpdate();
 
     char line[LINE_MAX];
-    int line_pos = 0;
+    int len = 0, pos = 0;
+    g_hist_n = 0;
+    g_hist_idx = 0;
 
     // Drain any garbage chars sent during enumeration
     while (UsbDevCdcReadReady() > 0) UsbDevCdcReadChar();
 
-    p_str("\r\n--- PicoPad Arcade Launcher debug shell ---\r\n");
+    p_str("\r\n--- PicoDeck debug shell ---\r\n");
     p_str("Type 'help' for commands.\r\n> ");
 
-    while (!g_shell_exit) {
-        // Allow B button to exit
-        if (KeyGet() == KEY_B) break;
+    while (!g_shell_exit)
+    {
+        // Allow X button to exit
+        if (KeyGet() == KEY_X) break;
 
-        // Read available USB CDC chars
-        while (UsbDevCdcReadReady() > 0) {
-            char c = UsbDevCdcReadChar();
-            if (c == '\r' || c == '\n') {
-                if (line_pos > 0) {
-                    line[line_pos] = 0;
-                    p_eol();
+        while (UsbDevCdcReadReady() > 0)
+        {
+            char c = (char)(u8)UsbDevCdcReadChar();
+
+            if (c == '\r' || c == '\n')
+            {
+                line[len] = 0;
+                p_eol();
+                if (len > 0)
+                {
+                    shell_hist_add(line);
                     process_line(line);
-                    line_pos = 0;
                 }
+                len = 0; pos = 0;
+                g_hist_idx = g_hist_n;
                 p_str("> ");
-            } else if (c == 0x7F || c == 0x08) {
-                // backspace
-                if (line_pos > 0) {
-                    line_pos--;
-                    p_str("\b \b");
+            }
+            else if (c == 0x7F || c == 0x08)          // backspace
+            {
+                if (pos > 0)
+                {
+                    for (int i = pos - 1; i < len - 1; i++) line[i] = line[i + 1];
+                    len--; pos--;
+                    shell_redraw(line, len, pos);
                 }
-            } else if (c >= 32 && c < 127 && line_pos < LINE_MAX - 1) {
-                line[line_pos++] = c;
-                UsbDevCdcWriteChar(c);  // echo
+            }
+            else if (c == '\t')                        // tab completion
+            {
+                shell_tab(line, &len, &pos);
+            }
+            else if (c == 0x1B)                        // escape sequence
+            {
+                int c1 = shell_read_timeout(20);
+                int c2 = shell_read_timeout(20);
+                if (c1 == '[')
+                {
+                    if (c2 == 'A')                     // up: history
+                    {
+                        if (g_hist_n > 0 && g_hist_idx > 0)
+                        {
+                            if (g_hist_idx == g_hist_n) strcpy(g_hist_cur, line);
+                            g_hist_idx--;
+                            strcpy(line, g_hist[g_hist_idx]);
+                            len = pos = (int)StrLen(line);
+                            shell_redraw(line, len, pos);
+                        }
+                    }
+                    else if (c2 == 'B')                // down: history
+                    {
+                        if (g_hist_idx < g_hist_n)
+                        {
+                            g_hist_idx++;
+                            if (g_hist_idx == g_hist_n) strcpy(line, g_hist_cur);
+                            else strcpy(line, g_hist[g_hist_idx]);
+                            len = pos = (int)StrLen(line);
+                            shell_redraw(line, len, pos);
+                        }
+                    }
+                    else if (c2 == 'C') { if (pos < len) { UsbDevCdcWriteChar(line[pos]); pos++; } }
+                    else if (c2 == 'D') { if (pos > 0) { pos--; p_str("\b"); } }
+                    else if (c2 == 'H') { while (pos > 0) { pos--; p_str("\b"); } }
+                    else if (c2 == 'F') { while (pos < len) { UsbDevCdcWriteChar(line[pos]); pos++; } }
+                }
+            }
+            else if (c == 0x03)                        // Ctrl+C
+            {
+                p_str("^C"); p_eol();
+                len = 0; pos = 0;
+                p_str("> ");
+            }
+            else if (c == 0x15)                        // Ctrl+U
+            {
+                len = 0; pos = 0;
+                shell_redraw(line, len, pos);
+            }
+            else if (c == 0x0C)                        // Ctrl+L
+            {
+                cmd_clear();
+                shell_redraw(line, len, pos);
+            }
+            else if (c >= 32 && c < 127 && len < LINE_MAX - 1)
+            {
+                for (int i = len; i > pos; i--) line[i] = line[i - 1];
+                line[pos] = c;
+                len++; pos++;
+                shell_redraw(line, len, pos);
             }
         }
+
         WaitMs(10);
     }
 

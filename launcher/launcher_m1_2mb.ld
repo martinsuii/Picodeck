@@ -1,15 +1,17 @@
-/* M1 Launcher linker script — PicoPad Arcade Launcher
+/* M1 Launcher linker script — PicoDeck
  * ----------------------------------------------------
  * Layout:
  *   0x10000000  boot2 (256 B)  — RP2040 second-stage
- *   0x10000100..0x100EFFFF  Game region (empty, ~959 KB)
- *   0x101F0000  Launcher (vector table + code, ~64 KB)
- *   0x100FC000  Launcher state (4 KB, M2+)
- *   0x100FF000  CF2 (4 KB, M3+)
+ *   0x10000100..0x101DFFFF  Game region (empty, ~1.95 MB)
+ *   0x101E0000..0x101FAFFF  Launcher (vector table + code, up to 108 KB)
+ *   0x101FB000..0x101FDFFF  Recovery (12 KB, separate image)
+ *   0x101FE000  Settings (4 KB)
+ *   0x101FF000  CF2 (4 KB)
  *
- * Build produces a single ELF spanning 0x10000000..0x101F0000+launcher_size.
- * Post-build script (tools/post_process_boot2.py) patches boot2 jump target
- * from 0x10000100 to 0x100F0100 and recomputes CRC32.
+ * Build produces a single ELF spanning 0x10000000..0x101E0000+launcher_size.
+ * Post-build script (post_process_boot2.py) patches boot2 jump target
+ * from 0x10000100 to the recovery base (0x101FB000) and recomputes CRC32.
+ * The recovery image then chain-loads the launcher (0x101E0000).
  */
 
 MEMORY
@@ -19,11 +21,11 @@ MEMORY
        1 MB (0x10100000..0x101FFFFF) is intentionally left untouched so
        that CircuitPython's CIRCUITPY filesystem (= installed there by
        default) survives reflashing our launcher. Game region thus stays
-       at 0x10000100..0x100EFFFF (~960 KB) — enough for any practical
+       at 0x10000100..0x101DFFFF (~1.95 MB) — enough for any practical
        MakeCode Arcade game. */
-    LAUNCHER(rx)      : ORIGIN = 0x101F0000, LENGTH = 60K
-    /* CF2 region 0x100FF000..0x100FFFFF (= MS Arcade picks this for 1 MB) */
-    RAM(rwx)          : ORIGIN = 0x20000000, LENGTH = 256K
+    LAUNCHER(rx)      : ORIGIN = 0x101E0000, LENGTH = 0x1B000
+    /* CF2 region 0x100FF000..0x100FFFFF (= MS PicoDeck picks this for 1 MB) */
+    RAM(rwx)          : ORIGIN = 0x20000000, LENGTH = 0x39000 /* top 28K reserved for WiFi shared page + module */
     SCRATCH_X(rwx)    : ORIGIN = 0x20040000, LENGTH = 4K   /* core 0 stack */
     BOOTLOADERRAM(rw) : ORIGIN = 0x20041000, LENGTH = 32   /* boot loader resident RAM */
     SCRATCH_Y(rwx)    : ORIGIN = 0x20041000+32, LENGTH = 4K-32  /* core 1 stack */
@@ -172,11 +174,14 @@ SECTIONS
         __HeapLimit = .;
         . = ALIGN(16);
         __malloc_start__ = .;
+        /* Heap must never grow into the WiFi shared page (launcher) or the
+           handoff/net buffer above the app's RAM (apps). The stack lives in
+           SCRATCH_X, separate from this region. */
+        __malloc_end__ = ORIGIN(RAM) + 0x38000;  /* 0x38000..0x39000 is the module net/HTTP buffer */
     } > RAM
 
     .stack0_dummy (COPY) : {
         . = ALIGN(16);
-        __malloc_end__ = .;
         KEEP (*(.stack0*))
     } > SCRATCH_X
 

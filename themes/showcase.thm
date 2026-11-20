@@ -1,0 +1,105 @@
+; ==========================================================================
+;  PicoDeck — theme showcase
+;
+;  Copy this file to /themes/ on the SD card, then pick "showcase.thm" in
+;  SETTINGS -> Themes.  Every key and element type the engine understands is
+;  used at least once; delete whatever you don't need.
+;
+;  Colours: RRGGBB, #RRGGBB, RGB shorthand (F0C) or a name:
+;           black white gray ltgray dkgray red green blue yellow cyan
+;           magenta orange purple pink brown
+;  Variables are declared with "set name = colour" and used as $name.
+; ==========================================================================
+
+; ---- reusable palette ----------------------------------------------------
+set ink     = 0A0F1E
+set panel   = 131A2E
+set line    = 27406B
+set cyan    = 35E0FF
+set mint    = 6CFFB0
+set amber   = FFB347
+set coral   = FF6B6B
+set text    = D8E4FF
+set dim     = 6B7EA8
+
+; ---- global colours ------------------------------------------------------
+bg                = $ink
+duck_color        = $cyan
+
+accent            = $amber
+ok                = $mint
+warn              = $amber
+err               = $coral
+
+menu_bg           = $ink
+menu_title        = $cyan
+menu_text         = $text
+menu_sel          = $amber
+menu_hl           = $panel
+menu_dim          = $dim
+
+home_title1       = PICODECK
+home_title2       = LAUNCHER
+home_time         = 1
+home_time_color   = $cyan
+home_weather      = 1
+home_weather_color = $amber
+
+; ---- menu layout ---------------------------------------------------------
+menu_title_scale  = 2
+menu_title_y      = 14
+menu_title2_y     = 34
+menu_sub_title_y  = 26
+menu_divider_y    = 62
+menu_start_y      = 78
+menu_line_h       = 20
+menu_footer_y     = 212
+menu_sel_style    = 0      ; 0 bar+arrow, 1 arrow, 2 invert, 3 colour only
+menu_show_footer  = 1
+menu_show_status  = 1
+menu_help         = A: Open   X: Back
+
+; ---- boot splash ---------------------------------------------------------
+boot_ms           = 2400
+boot_show_version = 1
+
+boot = frame,8,8,304,224,$line,1
+boot = line,20,40,300,40,$cyan,2
+boot = text,-1,52,PICODECK,$cyan,2,1
+boot = text,-1,78,LAUNCHER,$amber,2,1
+boot = disc,40,146,6,$mint
+boot = bar,60,140,200,14,$mint
+boot = pct,266,142,$text
+boot = spinner,284,142,$cyan
+boot = line,20,170,300,170,$line,1
+boot = text,-1,182,booting,$dim,1,1
+boot = marquee,20,204,Powered by PicoLibSDK - press a button,$cyan,130,220
+boot = blink,20,222,READY,$mint,600,1,0
+
+; ---- screensaver ---------------------------------------------------------
+saver_timeout     = 45
+saver_speed       = 3
+saver_backlight   = 60
+
+saver = frame,6,6,308,228,$line,1
+saver = text,-1,14,PICODECK,$cyan,1,1
+saver = blink,150,32,*,$amber,700,1,0
+saver = duck,0,54
+saver = line,30,112,290,112,$line,1
+saver = status,40,126
+saver = time,-1,186,$cyan,2,1
+saver = weather,-1,212,$amber,1,1
+saver = marquee,20,226,insert coin - insert coin - insert coin,$dim,120,280
+
+; Not used above, but available if you want them:
+;   rect    x,y,w,h,colour
+;   circle  x,y,r,colour
+;   usb     x,y          sd     x,y          battery  x,y
+;   boot = rect,16,20,288,160,$panel
+;   boot = circle,300,30,10,$coral
+
+; ---- mascot (taken literally after '=', indentation survives) ------------
+duck1 =     .-"""-.
+duck2 =    ( o   o )
+duck3 =    (   ^   )
+duck4 =     `-----'

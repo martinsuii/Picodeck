@@ -1,0 +1,46 @@
+; Neon / Cyberpunk theme for PicoDeck
+; Drop this file into /themes/ on the SD card, then pick it in Themes.
+
+; base colours
+bg=0A0114
+duck_color=00FFFF
+
+; ---- home + menu styling ----
+home_title1=PICODECK
+home_title2=LAUNCHER
+menu_bg=0A0114
+menu_title=00FFFF
+menu_text=F2EFFF
+menu_sel=FF00FF
+menu_hl=2A0040
+menu_dim=6A5A8C
+
+; home-screen clock + weather (from the ESP32 bridge)
+home_time=1
+home_time_color=00FFFF
+home_weather=1
+home_weather_color=FF00FF
+
+; dim the backlight while the screensaver runs (0..255, 255 = no change)
+saver_backlight=40
+
+; screensaver mascot (ascii art, 4 lines)
+duck1=   .-'''-.
+duck2=  |  o o  |
+duck3=  |   ^   |
+duck4=   '-----'
+
+; ---- boot splash ----
+boot=text,-1,40,PICODECK,00FFFF,2
+boot=text,-1,64,LAUNCHER,FF00FF,2
+boot=bar,40,150,240,12,FF00FF
+boot=pct,-1,172,00FFFF
+boot=spinner,24,152,00FFFF
+
+; ---- screensaver ----
+saver=text,-1,14,PICODECK,00FFFF
+saver=duck,0,54
+saver=status,40,130
+saver=time,-1,176,00FFFF,2
+saver=weather,20,206,FF00FF
+saver=text,-1,224,Press any button,FF00FF

@@ -1,4 +1,4 @@
-# PicoPad Arcade Launcher Makefile
+# PicoDeck Makefile
 # ------------------------------------------------------------
 # Requires PICO_ROOT_PATH env var pointing at a PicoLibSDK root.
 # By default the bundled copy under ../picolibsdk/ is used (set by
@@ -26,12 +26,41 @@ endif
 # C++ source files
 SRC += src/main.cpp
 SRC += src/menu.cpp
+SRC += src/apps.cpp
+SRC += src/fatal.cpp
+SRC += src/crashlog.cpp
 SRC += src/file_picker.cpp
+SRC += src/file_manager.cpp
+SRC += src/gpio_app.cpp
+SRC += src/image_viewer.cpp
+SRC += src/keyboard.cpp
+SRC += src/midi_pad.cpp
+SRC += src/paint_app.cpp
+SRC += src/qrcode.cpp
+SRC += src/rubber_ducky.cpp
+SRC += src/screensaver.cpp
+SRC += src/sd_upgrade.cpp
+SRC += src/settings.cpp
+SRC += src/snake.cpp
+SRC += src/sysinfo.cpp
+SRC += src/theme.cpp
+SRC += src/text_editor.cpp
+SRC += src/themes_app.cpp
+SRC += src/usb_gamepad.cpp
+SRC += src/uf2_inspect.cpp
 SRC += src/uf2_parser.cpp
 SRC += src/flash_dialog.cpp
 SRC += src/flasher.cpp
 SRC += src/arcade_patches.cpp
+SRC += src/boot_anim.cpp
+SRC += src/button_test.cpp
+SRC += src/calculator.cpp
+SRC += src/clock_apps.cpp
+SRC += src/companion.cpp
+SRC += src/native_wifi.cpp
+SRC += src/wifi_menu.cpp
 SRC += src/debug_shell.cpp
+SRC += src/fun_apps.cpp
 ifeq ($(findstring -DLAUNCHER_RELEASE,$(EXTRA_CFLAGS)),)
   SRC += src/usb_msc_screen.cpp
 endif
@@ -82,3 +111,8 @@ ASRC := $(filter-out %loader_picopad08.S,$(ASRC))
 ASRC := $(filter-out %loader_picopad20.S,$(ASRC))
 ASRC := $(filter-out %loader_picopadhstx.S,$(ASRC))
 ASRC := $(filter-out %loader_picopadvga.S,$(ASRC))
+
+# We provide our own compact FatalErrorMsg (src/fatal.cpp, ~5 KB smaller than
+# the SDK's printf-based screen). Drop the SDK implementation to avoid a
+# duplicate symbol.
+CSRC := $(filter-out %/sdk_fatal.c,$(CSRC))

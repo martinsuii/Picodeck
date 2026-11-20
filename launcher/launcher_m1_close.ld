@@ -1,4 +1,4 @@
-/* M1 Launcher linker script — PicoPad Arcade Launcher
+/* M1 Launcher linker script — PicoDeck
  * ----------------------------------------------------
  * Layout:
  *   0x10000000  boot2 (256 B)  — RP2040 second-stage
@@ -16,7 +16,7 @@ MEMORY
 {
     BOOT2(rx)         : ORIGIN = 0x10000000, LENGTH = 256
     /* Game region 0x10000100..0x100EFFFF — not used by launcher,
-       reserved for Arcade firmware loaded later. */
+       reserved for PicoDeck firmware loaded later. */
     LAUNCHER(rx)      : ORIGIN = 0x100F0000, LENGTH = 48K
     /* Launcher state region 0x100FC000..0x100FCFFF — for M2+ */
     /* CF2 region        0x100FF000..0x100FFFFF — for M3+ */

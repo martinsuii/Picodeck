@@ -1,6 +1,6 @@
 // ****************************************************************************
 //
-//             PicoPad Arcade Launcher — SD file picker
+//             PicoDeck — SD file picker
 //
 //   Browses SD card with full sub-folder navigation. Returns full path to
 //   the selected file. Folders and UF2 files are both shown — folders first.
@@ -35,6 +35,9 @@ static PickerEntry g_entries[PICKER_MAX_FILES];
 static int  g_entry_count;
 static char g_current_path[MAX_PATH];
 
+// Active file suffix filter (without dot), set from the pattern argument.
+static char g_filter_ext[8] = "UF2";
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -56,30 +59,35 @@ static void ShowMessage(const char* title, const char* line1, const char* line2)
               COL_YELLOW);
     if (line1) DrawCenteredText(line1, 90, COL_WHITE);
     if (line2) DrawCenteredText(line2, 110, COL_LTGRAY);
-    DrawCenteredText("Press B to return", 200, COL_GRAY);
+    DrawCenteredText("Press X to return", 200, COL_GRAY);
     DispUpdate();
 
     while (1)
     {
         u8 k = KeyGet();
-        if (k == KEY_B) return;
+        if (k == KEY_X) return;
     }
 }
 
-// True if filename matches pattern (only suffix wildcard "*.EXT" supported here).
-// PicoLibSDK FindNext accepts patterns directly, but we filter on our side
-// because we list folders + files together.
-static Bool NameMatchesUF2(const char* name)
+// True if filename ends with ".<ext>" (case-insensitive). Only suffix
+// wildcards ("*.EXT") are supported. PicoLibSDK FindNext accepts patterns
+// directly, but we filter on our side because we list folders + files together.
+static Bool NameMatchesExt(const char* name, const char* ext)
 {
     int n = (int)strlen(name);
-    if (n < 5) return False;  // need at least "X.UF2"
-    // Case-insensitive suffix compare against ".UF2"
-    return (
-        (name[n-4] == '.') &&
-        (name[n-3] == 'U' || name[n-3] == 'u') &&
-        (name[n-2] == 'F' || name[n-2] == 'f') &&
-        (name[n-1] == '2')
-    );
+    int e = (int)strlen(ext);
+    if (e == 0) return True;
+    if (n < e + 2) return False;  // need at least "X.EXT"
+    if (name[n - e - 1] != '.') return False;
+    for (int i = 0; i < e; i++)
+    {
+        char a = name[n - e + i];
+        char b = ext[i];
+        if (a >= 'a' && a <= 'z') a = (char)(a - 32);
+        if (b >= 'a' && b <= 'z') b = (char)(b - 32);
+        if (a != b) return False;
+    }
+    return True;
 }
 
 // ---------------------------------------------------------------------------
@@ -182,7 +190,7 @@ static int LoadDirectory(const char* dir_path)
         if (info.attr & ATTR_DIR) continue;
         if (info.name[0] == '.') continue;
 
-        if (NameMatchesUF2(info.name))
+        if (NameMatchesExt(info.name, g_filter_ext))
         {
             int n = info.namelen;
             if (n >= PICKER_NAME_LEN) n = PICKER_NAME_LEN - 1;
@@ -310,7 +318,7 @@ static void RenderList(int selected, int scroll_top)
         strcat(footer, numbuf);
     }
     DrawText(footer, 10, PICKER_FOOTER_Y, COL_LTGRAY);
-    DrawText("A=Open  B=Up/Cancel",
+    DrawText("A=Open  X=Up/Cancel",
              WIDTH - 19*FONTW, PICKER_FOOTER_Y, COL_LTGRAY);
 
     DispUpdate();
@@ -323,7 +331,22 @@ static void RenderList(int selected, int scroll_top)
 PickerResult FilePickerRun(const char* dir_path, const char* pattern,
                            char* out_path, int out_len)
 {
-    (void)pattern;  // suffix filter is hardcoded to UF2 in NameMatchesUF2
+    // Parse "*.EXT" pattern into the suffix filter (default "UF2").
+    if (pattern != NULL && pattern[0] == '*' && pattern[1] == '.')
+    {
+        const char* src = pattern + 2;
+        int i = 0;
+        while (src[i] != 0 && i < (int)sizeof(g_filter_ext) - 1)
+        {
+            g_filter_ext[i] = src[i];
+            i++;
+        }
+        g_filter_ext[i] = 0;
+    }
+    else
+    {
+        strcpy(g_filter_ext, "UF2");
+    }
 
     // Mount SD
     if (!DiskAutoMount())
@@ -436,7 +459,7 @@ PickerResult FilePickerRun(const char* dir_path, const char* pattern,
             }
             break;
 
-        case KEY_B:
+        case KEY_X:
             // At root → cancel; otherwise go up one level
             if (PathIsRoot(g_current_path)) {
                 return PICKER_RESULT_CANCEL;

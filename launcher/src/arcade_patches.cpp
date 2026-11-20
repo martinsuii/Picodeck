@@ -1,6 +1,6 @@
 // ****************************************************************************
 //
-//      PicoPad Arcade Launcher — patch payloads
+//      PicoDeck — patch payloads
 //
 // ****************************************************************************
 
@@ -11,11 +11,11 @@
 // Signatures (= unique byte sequences that identify patch sites in Arcade UF2)
 // ---------------------------------------------------------------------------
 
-const u8 ARCADE_ILI9341_SIG[ARCADE_ILI9341_SIG_LEN] = {
+const u8 PICODECK_ILI9341_SIG[PICODECK_ILI9341_SIG_LEN] = {
     0xEF, 0x03, 0x03, 0x80, 0x02, 0xCF, 0x03,
 };
 
-const u8 ARCADE_ENC16_SIG[ARCADE_ENC16_SIG_LEN] = {
+const u8 PICODECK_ENC16_SIG[PICODECK_ENC16_SIG_LEN] = {
     0x4B, 0x01, 0x0B, 0x43, 0xCC, 0x10, 0x04, 0x43,
 };
 
@@ -23,7 +23,7 @@ const u8 ARCADE_ENC16_SIG[ARCADE_ENC16_SIG_LEN] = {
 // ST7789 init replacement (23 bytes used, slot is 114 bytes, rest zero-padded)
 // ---------------------------------------------------------------------------
 
-const u8 ARCADE_ST7789_INIT[ARCADE_ILI9341_INIT_SLOT] = {
+const u8 PICODECK_ST7789_INIT[PICODECK_ILI9341_INIT_SLOT] = {
     0x01, 0x80, 150,             // SWRESET + 150ms
     0x11, 0x80, 255,             // SLPOUT + 255ms
     0x3A, 0x81, 0x55, 10,        // COLMOD = 0x55 (16bpp RGB565) + 10ms
@@ -59,7 +59,7 @@ const u8 ARCADE_ST7789_INIT[ARCADE_ILI9341_INIT_SLOT] = {
 #define LUT_BYTE2  ((u8)((LAUNCHER_LUT_ADDR >> 16) & 0xFF))
 #define LUT_BYTE3  ((u8)((LAUNCHER_LUT_ADDR >> 24) & 0xFF))
 
-const u8 ARCADE_PALETTE_PATCH[ARCADE_ENC16_LOOP_LEN] = {
+const u8 PICODECK_PALETTE_PATCH[PICODECK_ENC16_LOOP_LEN] = {
     0x03, 0x4B,                              // ldr r3, [pc, #0x0C]
     0x10, 0x24,                              // movs r4, #16
     0x01, 0xCB,                              // ldm r3!, {r0}
@@ -75,10 +75,10 @@ const u8 ARCADE_PALETTE_PATCH[ARCADE_ENC16_LOOP_LEN] = {
 
 // ---------------------------------------------------------------------------
 // MakeCode Arcade default 16-color palette in RGB565 doubled format (4B each)
-// = identical to PCC patcher's ARCADE_PALETTE → enc16 → << 16 | itself
+// = identical to PCC patcher's PICODECK_PALETTE → enc16 → << 16 | itself
 // ---------------------------------------------------------------------------
 
-const u8 ARCADE_PALETTE_LUT[ARCADE_LUT_LEN] = {
+const u8 PICODECK_PALETTE_LUT[PICODECK_LUT_LEN] = {
     0x00, 0x00, 0x00, 0x00,   // black
     0xff, 0xff, 0xff, 0xff,   // white
     0xf9, 0x04, 0xf9, 0x04,   // red
@@ -131,14 +131,14 @@ static void Pack32LE(u8* dst, u32 v)
 // block (e.g. {"compression":"LZMA",...,"name":"delivery","eURL":...})
 // ---------------------------------------------------------------------------
 
-Bool ArcadeReadName(char* out, u32 max_len)
+Bool PicoDeckReadName(char* out, u32 max_len)
 {
     if (max_len < 2) return False;
 
     static const char NAME_KEY[] = "\"name\":\"";
     const u32 KEY_LEN = sizeof(NAME_KEY) - 1;
     const u8* base = (const u8*)0x10000100u;
-    const u32 size = LAUNCHER_GAME_HI - 0x10000100u;
+    const u32 size = GAME_ERASE_HI - 0x10000100u;
 
     for (u32 off = 0; off + KEY_LEN <= size; off++) {
         if (memcmp(base + off, NAME_KEY, KEY_LEN) != 0) continue;
@@ -154,12 +154,12 @@ Bool ArcadeReadName(char* out, u32 max_len)
     return False;
 }
 
-u32 ArcadeBuildCf2(u8* dst)
+u32 PicoDeckBuildCf2(u8* dst)
 {
     // Initialize whole sector to 0x00 — matches web patcher exactly.
     // 0xFF padding would cause firmware to read garbage entries past
     // the (0,0) terminator and apply wrong config.
-    memset(dst, 0x00, ARCADE_CF2_LEN);
+    memset(dst, 0x00, PICODECK_CF2_LEN);
 
     // Magic
     memcpy(dst, CF2_MAGIC, 8);
@@ -179,5 +179,5 @@ u32 ArcadeBuildCf2(u8* dst)
     Pack32LE(dst + p,     0);
     Pack32LE(dst + p + 4, 0);
 
-    return ARCADE_CF2_LEN;
+    return PICODECK_CF2_LEN;
 }

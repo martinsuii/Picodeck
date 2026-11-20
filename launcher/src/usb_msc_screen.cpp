@@ -1,6 +1,6 @@
 // ****************************************************************************
 //
-//             PicoPad Arcade Launcher — USB MSC SD card reader
+//             PicoDeck — USB MSC SD card reader
 //
 // ****************************************************************************
 
@@ -180,7 +180,7 @@ static void DrawWaiting(int blink)
 
     if (blink & 1) DrawText("Waiting for host...", 20, 170, COL_WHITE);
 
-    DrawText("Press B to exit", 20, 215, COL_GRAY);
+    DrawText("Press X to exit", 20, 215, COL_GRAY);
     DispUpdate();
 }
 
@@ -199,7 +199,7 @@ static void DrawActive(u32 sectors)
     DrawText("Eject from PC before exit.", 20, 165, COL_LTGRAY);
     DrawText("Display may freeze during",  20, 185, COL_GRAY);
     DrawText("transfer — that's normal.",  20, 200, COL_GRAY);
-    DrawText("B: exit (after eject)", 20, 220, COL_GRAY);
+    DrawText("X: exit (after eject)", 20, 220, COL_GRAY);
     DispUpdate();
 }
 
@@ -252,9 +252,9 @@ void UsbMscScreenRun(void)
         strcat(buf, " size=");
         DecNum(num, g_sd_block_count, 0); strcat(buf, num);
         DrawText(buf, 20, 150, COL_GRAY);
-        DrawText("Press B to return", 20, 215, COL_GRAY);
+        DrawText("Press X to return", 20, 215, COL_GRAY);
         DispUpdate();
-        while (KeyGet() != KEY_B) WaitMs(50);
+        while (KeyGet() != KEY_X) WaitMs(50);
         goto exit_msc;
     }
 
@@ -279,7 +279,7 @@ void UsbMscScreenRun(void)
     {
         int blink = 0;
         while (1) {
-            if (KeyGet() == KEY_B) goto exit_msc;
+            if (KeyGet() == KEY_X) goto exit_msc;
             WaitMs(200);
             DrawWaiting(++blink);
             if (MscdItf.ep_in != 0) break;  // MSC interface opened
@@ -293,7 +293,7 @@ void UsbMscScreenRun(void)
     {
         u32 tick = 0;
         while (1) {
-            if (KeyGet() == KEY_B) break;
+            if (KeyGet() == KEY_X) break;
             if (!UsbIsMounted()) break;  // host unplugged
             WaitMs(50);
             // Heartbeat: blink a small marker so user can see launcher is alive

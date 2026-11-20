@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d10">
+  <title>PicoDeck Companion</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">▚</span>
+      <div>
+        <strong>PicoDeck</strong>
+        <span>Companion</span>
+      </div>
+    </div>
+    <div class="pills">
+      <span id="sdPill" class="pill">SD: checking…</span>
+      <span id="devPill" class="pill">Device: offline</span>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Sections">
+    <button class="tabbtn active" data-tab="sd"><span>▤</span>SD card</button>
+    <button class="tabbtn" data-tab="themes"><span>✦</span>Themes</button>
+    <button class="tabbtn" data-tab="updates"><span>⇪</span>Updates</button>
+    <button class="tabbtn" data-tab="device"><span>⌁</span>Device</button>
+    <button class="tabbtn" data-tab="help"><span>?</span>Help</button>
+  </nav>
+
+  <main>
+    <!-- ------------------------------------------------------------------ -->
+    <section id="tab-sd" class="tabpane active">
+      <div class="grid two">
+        <div class="card">
+          <h2>SD card</h2>
+          <p class="muted">The card the launcher reads games, themes and updates from.</p>
+          <div class="row">
+            <select id="sdDetect" class="grow"></select>
+            <button id="sdUse" class="btn">Use</button>
+          </div>
+          <div class="row" id="sdPathRow">
+            <input id="sdPath" class="grow" placeholder="/run/media/you/CARD">
+            <button id="sdSetPath" class="btn">Set path</button>
+          </div>
+          <div class="row" id="sdPickRow" hidden>
+            <button id="sdPick" class="btn">Choose SD folder…</button>
+            <span id="sdPickLabel" class="muted small">No folder chosen</span>
+          </div>
+          <div id="sdInfo" class="info"></div>
+          <div class="bar"><div id="sdFreeBar" class="barfill"></div></div>
+          <div class="row wrap">
+            <button id="sdRefresh" class="btn">Refresh</button>
+            <button id="sdPrepare" class="btn">Prepare SD…</button>
+            <button id="sdBackup" class="btn">Backup .tar.gz</button>
+            <button id="sdRestore" class="btn">Restore…</button>
+            <input id="sdRestoreFile" type="file" accept=".zip,.gz,.tgz,application/zip,application/gzip" hidden>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Quick actions</h2>
+          <p class="muted">Common jobs, without digging through folders.</p>
+          <div class="quickgrid">
+            <button class="quick" data-quick="upload"><b>Upload</b><span>games, themes, payloads</span></button>
+            <button class="quick" data-quick="update"><b>Stage update</b><span>open the Updates tab</span></button>
+            <button class="quick" data-quick="theme"><b>Theme studio</b><span>edit and preview .thm</span></button>
+            <button class="quick" data-quick="connect"><b>Connect</b><span>USB or WiFi control</span></button>
+          </div>
+          <div class="drop" id="sdDrop">
+            <b>Drop files here</b>
+            <span>They are uploaded into the current folder.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <div class="crumbs" id="crumbs"></div>
+          <div class="row">
+            <button id="fmUp" class="btn small">↑ Up</button>
+            <button id="fmNewFolder" class="btn small">+ Folder</button>
+            <button id="fmUpload" class="btn small">Upload</button>
+            <input id="fmUploadFile" type="file" multiple hidden>
+            <button id="fmRefresh" class="btn small">Refresh</button>
+          </div>
+        </div>
+        <div class="tablewrap">
+          <table class="files">
+            <thead><tr><th>Name</th><th class="num">Size</th><th class="hide-sm">Modified</th><th></th></tr></thead>
+            <tbody id="fileRows"></tbody>
+          </table>
+        </div>
+        <p id="fmEmpty" class="empty" hidden>This folder is empty.</p>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------ -->
+    <section id="tab-themes" class="tabpane">
+      <div class="grid themes">
+        <div class="card">
+          <div class="row between">
+            <h2>Themes</h2>
+            <div class="seg">
+              <button class="segbtn active" data-source="sd">SD</button>
+              <button class="segbtn" data-source="repo">Examples</button>
+            </div>
+          </div>
+          <div class="row">
+            <button id="thNew" class="btn small">+ New theme</button>
+            <input id="thNewName" class="grow" placeholder="name.thm">
+          </div>
+          <div id="thList" class="theme-list"></div>
+          <p class="muted small">Editing writes straight to the card. The launcher picks it up on the next boot.</p>
+        </div>
+
+        <div class="card">
+          <div class="row between">
+            <h2 id="thTitle">Theme studio</h2>
+            <div class="seg screens">
+              <button class="segbtn active" data-screen="home">Home</button>
+              <button class="segbtn" data-screen="boot">Boot</button>
+              <button class="segbtn" data-screen="saver">Saver</button>
+            </div>
+          </div>
+          <div class="studio">
+            <div class="editorwrap">
+              <div class="row wrap tiny">
+                <button class="btn tiny" data-insert="text">+ text</button>
+                <button class="btn tiny" data-insert="marquee">+ marquee</button>
+                <button class="btn tiny" data-insert="bar">+ bar</button>
+                <button class="btn tiny" data-insert="rect">+ rect</button>
+                <button class="btn tiny" data-insert="frame">+ frame</button>
+                <button class="btn tiny" data-insert="circle">+ circle</button>
+                <button class="btn tiny" data-insert="duck">+ duck</button>
+                <button class="btn tiny" data-insert="time">+ time</button>
+              </div>
+              <textarea id="thText" spellcheck="false" placeholder="bg=000000&#10;menu_title=FFFF00&#10;boot=text,-1,40,PICODECK,FFFF00,2,1"></textarea>
+            </div>
+            <div class="previewwrap">
+              <canvas id="preview" width="320" height="240"></canvas>
+              <div id="previewWarn" class="warn small"></div>
+              <p class="muted small">Live 320×240 preview using the launcher's 8×8 font.</p>
+            </div>
+          </div>
+          <div class="row wrap">
+            <button id="thSave" class="btn primary">Save</button>
+            <button id="thApply" class="btn">Set active</button>
+            <button id="thSendDevice" class="btn">Send to device</button>
+            <button id="thRevert" class="btn">Revert</button>
+            <span id="thStatus" class="muted small"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------ -->
+    <section id="tab-updates" class="tabpane">
+      <div class="grid two">
+        <div class="card">
+          <h2>Inspect a UF2</h2>
+          <p class="muted">Checks every block before you flash it.</p>
+          <div class="drop tall" id="uf2Drop">
+            <b>Drop a .uf2 here</b>
+            <span>or</span>
+            <button id="uf2Pick" class="btn">Choose file</button>
+            <input id="uf2File" type="file" accept=".uf2,application/octet-stream" hidden>
+          </div>
+          <div class="row wrap">
+            <button id="uf2Local" class="btn">Load latest build</button>
+            <button id="uf2SdUpdate" class="btn">Inspect SD update.uf2</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Report</h2>
+          <div id="uf2Report" class="empty">No file inspected yet.</div>
+          <div class="row wrap">
+            <button id="uf2Stage" class="btn primary" disabled>Stage as update.uf2</button>
+          </div>
+          <p id="uf2StageNote" class="muted small"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>How the update works</h2>
+        <ol class="steps">
+          <li>Stage <code>update.uf2</code> on the SD card root.</li>
+          <li>Boot the PicoPad with the card inserted. The launcher sees the file, verifies it, flashes it and deletes it.</li>
+          <li>If the version on the card is newer, it offers the update; equal or older versions are ignored.</li>
+        </ol>
+        <p class="muted small">A previous <code>update.uf2</code> is copied to <code>update.uf2.bak</code> before staging.</p>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------ -->
+    <section id="tab-device" class="tabpane">
+      <div class="grid two">
+        <div class="card">
+          <h2>Connection</h2>
+          <div class="seg wide">
+            <button class="segbtn active" data-transport="usb">USB cable</button>
+            <button class="segbtn" data-transport="wifi">WiFi (ESP32)</button>
+          </div>
+
+          <div id="usbFields" class="fields">
+            <label>Serial port</label>
+            <div class="row">
+              <select id="devPort" class="grow"></select>
+              <button id="devPorts" class="btn small">↻</button>
+            </div>
+            <label>Baud</label>
+            <input id="devBaud" value="115200" inputmode="numeric">
+            <p id="serialWarn" class="warn small"></p>
+          </div>
+
+          <div id="wifiFields" class="fields" hidden>
+            <label>ESP32 host or IP</label>
+            <input id="devHost" placeholder="picopad.local">
+            <label>TCP port</label>
+            <input id="devWifiPort" value="2323" inputmode="numeric">
+            <p class="muted small">Run <code>LINK START</code> on the ESP32 once (or add it to the sketch). Default port 2323.</p>
+          </div>
+
+          <div class="row">
+            <button id="devConnect" class="btn primary">Connect</button>
+            <button id="devDisconnect" class="btn">Disconnect</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Status</h2>
+          <div id="devStatus" class="statgrid">
+            <div><span>Device</span><b id="stConn">offline</b></div>
+            <div><span>Version</span><b id="stVer">—</b></div>
+            <div><span>Battery</span><b id="stBat">—</b></div>
+            <div><span>SD card</span><b id="stSd">—</b></div>
+            <div><span>USB</span><b id="stUsb">—</b></div>
+            <div><span>ESP32</span><b id="stEsp">—</b></div>
+            <div><span>Theme</span><b id="stTheme">—</b></div>
+          </div>
+          <div class="row wrap">
+            <button class="btn small" data-cmd="PING">Ping</button>
+            <button class="btn small" data-cmd="INFO">Info</button>
+            <button class="btn small" data-cmd="STATUS">Refresh status</button>
+            <button class="btn small" data-cmd="SAVER">Screensaver</button>
+            <button class="btn small danger" data-cmd="REBOOT">Reboot</button>
+            <button class="btn small danger" data-cmd="BOOTSEL">BOOTSEL</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <div class="card">
+          <div class="row between">
+            <h2>Launch</h2>
+            <button class="btn small" id="devApps">Refresh list</button>
+          </div>
+          <div id="appList" class="applist"><p class="muted">Connect and press Refresh list.</p></div>
+        </div>
+
+        <div class="card">
+          <div class="row between">
+            <h2>Theme</h2>
+            <button class="btn small" id="devThemes">Refresh list</button>
+          </div>
+          <div id="devThemeList" class="applist"><p class="muted">Connect and press Refresh list.</p></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row between">
+          <h2>Console</h2>
+          <div class="row">
+            <select id="devTarget">
+              <option value="pico">PicoPad</option>
+              <option value="esp">ESP32 (WiFi only)</option>
+            </select>
+            <button id="devClear" class="btn small">Clear</button>
+          </div>
+        </div>
+        <div id="devLog" class="log" aria-live="polite"></div>
+        <form id="devForm" class="row">
+          <input id="devInput" class="grow" placeholder="Type a command, e.g. STATUS" autocomplete="off">
+          <button class="btn primary" type="submit">Send</button>
+        </form>
+        <div class="row wrap tiny">
+          <button class="btn tiny" data-send="STATUS">STATUS</button>
+          <button class="btn tiny" data-send="APPS">APPS</button>
+          <button class="btn tiny" data-send="THEMES">THEMES</button>
+          <button class="btn tiny" data-send="INFO">INFO</button>
+          <button class="btn tiny" data-send="HELP">HELP</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------ -->
+    <section id="tab-help" class="tabpane">
+      <div class="grid two">
+        <div class="card">
+          <h2>Start here</h2>
+          <ol class="steps">
+            <li>Plug the SD card into this computer and pick it above.</li>
+            <li>Use <b>SD card</b> to install games, payloads and themes.</li>
+            <li>Use <b>Updates</b> to stage a launcher build.</li>
+            <li>Use <b>Device</b> to control the PicoPad over USB or WiFi.</li>
+          </ol>
+          <h3>On a phone</h3>
+          <p class="muted">Run this app on a computer on the same network, then open the <b>Network</b> URL shown in the terminal. Add it to the home screen and it behaves like an app.</p>
+        </div>
+        <div class="card">
+          <h2>USB control</h2>
+          <p>Open <b>TOOLS → Companion Link</b> on the PicoPad, then connect here.</p>
+          <p class="muted small">Needs the optional <code>serialport</code> package: <code>npm install</code> in <code>companion/</code>.</p>
+          <h2>WiFi control</h2>
+          <p>Flash the bridge in <code>esp32/wifi_bridge</code>, connect the ESP32 to the PicoPad UART, then send <code>LINK START</code> once. Point the app at the ESP32 IP (or <code>picopad.local</code>) and port 2323.</p>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Command reference</h2>
+        <div class="codewrap"><pre><code>PING                 → PONG
+INFO                 → INFO &lt;version&gt; &lt;board&gt; &lt;heap&gt;
+STATUS               → STATUS &lt;ver&gt; &lt;mv&gt; &lt;pct&gt; &lt;sd&gt; &lt;usb&gt; &lt;esp&gt; &lt;theme&gt;
+APPS                 → APPS &lt;n&gt; + APP &lt;id&gt; &lt;label&gt; … + END
+LAUNCH &lt;id&gt;          → launch a game, tool or fun app
+THEMES               → THEMES &lt;n&gt; + THEME &lt;name&gt; … + END
+THEME SET &lt;name&gt;     → activate a theme
+SAVER                → show the screensaver
+REBOOT               → reboot the launcher
+BOOTSEL              → reboot into the RP2040 bootloader</code></pre></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<script>
+  if (window.PicoAndroid) window.PICO_FONT_URL = '../assets/font_bold_8x8.bmp';
+  window.module = { exports: {} };
+  window.exports = window.module.exports;
+</script>
+<script src="../lib/theme.js"></script>
+<script>
+  window.PicoTheme = window.module.exports;
+  window.module = { exports: {} };
+  window.exports = window.module.exports;
+</script>
+<script src="../lib/uf2.js"></script>
+<script>
+  window.PicoUf2 = window.module.exports;
+  delete window.module;
+  delete window.exports;
+</script>
+<script src="theme-preview.js"></script>
+<script src="local-api.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

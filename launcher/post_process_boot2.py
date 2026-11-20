@@ -2,17 +2,20 @@
 Post-process boot2 + launcher binary for M1 layout.
 
 Operations:
-  1. Locate jump address `0x10000100` in boot2 (256 B at start of bin).
-  2. Replace with `0x100F0100` (= our launcher entry point).
+  1. Locate the boot vector-table base `0x10000100` in boot2 (256 B at start of bin).
+  2. Replace it with the recovery base (default `0x100FB000`).
   3. Recompute CRC32 (RP2040 boot2 polynomial: MPEG-2 / IEEE 802.3 not-reflected).
   4. Write CRC32 to last 4 bytes of boot2.
 
+boot2 sets VTOR to the given base and enters the reset handler at base+4, so
+the recovery image boots first. Recovery then chain-loads the launcher.
+
 Boot2 source (boot2_w25q080_RP2040_bin.S) contains:
-  word[56] = 0x10000100  (jump target — we patch this)
+  word[56] = 0x10000100  (vector-table base — we patch this)
   word[63] = CRC32       (we recompute this)
 
 Usage:
-  python post_process_boot2.py <bin_file>
+  python post_process_boot2.py <bin_file> [--target 0x100FB000]
 
 The bin file is modified in-place.
 """
@@ -43,10 +46,10 @@ def patch_boot2(bin_path: Path) -> None:
 
     boot2 = data[:256]
 
-    # Boot2 jumps to (XIP_BASE + 0x100) = 0x10000100 in default layout, where
-    # the vector table immediately follows boot2 (256 B = 0x100). Our launcher
-    # has its vector table at 0x100F0000 (= start of LAUNCHER memory region),
-    # so we patch the jump target to point there directly.
+    # boot2 configures XIP, sets VTOR to this vector-table base and enters the
+    # reset handler at base+4. The default is 0x10000100 (app directly after
+    # boot2). We point it at the recovery image, which then chain-loads the
+    # launcher.
     OLD_TARGET = 0x10000100
     NEW_TARGET = patch_boot2.target  # set by main()
 
@@ -86,10 +89,10 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("bin_file", type=Path)
-    parser.add_argument("--target", default="0x100F0000",
-                        help="boot2 jump target (= our launcher base address; "
-                             "default 0x100F0000 for 1 MB layout, "
-                             "use 0x101F0000 for 2 MB layout)")
+    parser.add_argument("--target", default="0x100FB000",
+                        help="boot2 vector-table target (= recovery base address; "
+                             "default 0x100FB000 for 1 MB layout, "
+                             "use 0x101FB000 for 2 MB layout)")
     args = parser.parse_args()
 
     if not args.bin_file.exists():

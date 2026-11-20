@@ -1,0 +1,15 @@
+{
+  "name": "picopad-companion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Desktop and phone companion for the PicoDeck launcher",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {
+    "serialport": "^13.0.0"
+  }
+}

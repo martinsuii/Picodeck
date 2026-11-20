@@ -1,6 +1,6 @@
 // ****************************************************************************
 //
-//                  PicoPad Arcade Launcher — flasher
+//                  PicoDeck — flasher
 //
 // ****************************************************************************
 
@@ -17,9 +17,10 @@ extern "C" {
 // Flash options chosen by the user in the confirmation dialog
 typedef struct {
     Bool preserve_launcher;   // skip writes to protected regions (default ON)
-    Bool apply_st7789_init;   // Arcade-specific: ST7789 display init patch
-    Bool apply_palette_lut;   // Arcade-specific: palette LUT
-    Bool apply_cf2;           // Arcade-specific: CF2 config
+    Bool apply_st7789_init;   // PicoDeck-specific: ST7789 display init patch
+    Bool apply_palette_lut;   // PicoDeck-specific: palette LUT
+    Bool apply_cf2;           // PicoDeck-specific: CF2 config
+    Bool swap_yb;             // PicoDeck-specific: make the Y button act as B
 } FlashOptions;
 
 typedef enum {
@@ -45,6 +46,16 @@ FlashResult FlasherWriteFlash(const char* path, const Uf2Info* info,
 // Check whether (addr, size) overlaps any of the protected regions
 // (= our boot2, launcher, state, CF2).
 Bool FlasherIsProtected(u32 addr, u32 size);
+
+// "Flasher trasher": after a confirmation prompt, erase the flashed game
+// region (0x10000000..LAUNCHER_GAME_HI), restoring boot2 and keeping the
+// launcher intact. Returns without erasing if the user cancels; otherwise
+// performs a watchdog reset (= never returns).
+void FlasherTrashGame(void);
+
+// "Flash backup": dump the flashed game region to /backups/BACKUPnn.UF2 on the
+// SD card. Shows a message and returns if no game / no SD card.
+void FlasherBackupRun(void);
 
 #ifdef __cplusplus
 }
