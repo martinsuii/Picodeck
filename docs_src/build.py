@@ -124,12 +124,13 @@ TEMPLATE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="light dark">
 <meta name="description" content="{description}">
 <meta property="og:title" content="{title} · PicoDeck docs">
 <meta property="og:description" content="{description}">
 <meta property="og:type" content="website">
 <link rel="canonical" href="{pages_url}/{slug}.html">
+<script src="theme-init.js"></script>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 <title>{title} · PicoDeck docs</title>
@@ -148,6 +149,7 @@ TEMPLATE = """<!doctype html>
   </a>
   <div class="top-spacer"></div>
   <span class="version">v{version}</span>
+  <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle dark mode">Dark</button>
   <a class="top-link" href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener">GitHub ↗</a>
   <a class="btn btn-small" href="https://github.com/martinsuii/Picodeck/releases">Download</a>
 </header>

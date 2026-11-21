@@ -1,6 +1,25 @@
 'use strict';
 
 (function () {
+  // Light / dark toggle. The inline head script picks the saved or system
+  // preference before first paint.
+  const themeBtn = document.getElementById('themeBtn');
+  function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (themeBtn) {
+      themeBtn.textContent = theme === 'dark' ? 'Light' : 'Dark';
+      themeBtn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    }
+  }
+  setTheme(document.documentElement.getAttribute('data-theme') || 'light');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      setTheme(next);
+      try { localStorage.setItem('picodeck-theme', next); } catch {}
+    });
+  }
+
   const sidebar = document.getElementById('sidebar');
   const menuBtn = document.getElementById('menuBtn');
   const backdrop = document.getElementById('backdrop');
