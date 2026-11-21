@@ -83,7 +83,7 @@ function main() {
       {
         name: 'arcade-multitool-companion',
         productName: 'PicoDeck Companion',
-        version: '1.0.0',
+        version: require('../package.json').version,
         private: true,
         main: 'desktop/main.js',
       },

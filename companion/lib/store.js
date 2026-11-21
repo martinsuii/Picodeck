@@ -12,7 +12,7 @@ const http = require('http');
 const https = require('https');
 
 const DEFAULT_URL =
-  process.env.STORE_URL || 'https://assets.msuii.dev/picopadapps/index.txt';
+  process.env.STORE_URL || 'https://pico.msuii.dev/assets/apps/index.txt';
 
 function fetchBuffer(url, max = 8 * 1024 * 1024) {
   return new Promise((resolve, reject) => {

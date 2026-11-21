@@ -18,7 +18,7 @@ const COMPANION = path.resolve(ROOT, '..');
 const THEMES = path.resolve(COMPANION, '..', 'themes');
 const BUILD = path.join(ROOT, 'build');
 const DIST = path.join(COMPANION, 'dist');
-const VERSION = '1.0.0';
+const VERSION = require('../package.json').version;
 
 const SDK =
   process.env.ANDROID_HOME ||

@@ -42,3 +42,6 @@ companion/dist/
 companion/android/**/build/
 companion/android/.gradle/
 companion/config.json
+
+# Deployed separately to pico.msuii.dev; not part of the published repo.
+storefront/

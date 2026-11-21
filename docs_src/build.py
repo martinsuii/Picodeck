@@ -115,7 +115,7 @@ NAV_LINKS = """<div class="side-group">
   <div class="side-title">Project</div>
   <a href="https://github.com/martinsuii/Picodeck/releases" target="_blank" rel="noopener">Releases</a>
   <a href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener">Source</a>
-  <a href="http://assets.msuii.dev/picopadapps/" target="_blank" rel="noopener">App catalogue</a>
+  <a href="https://pico.msuii.dev" target="_blank" rel="noopener">App store</a>
   <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener">Base project</a>
 </div>"""
 

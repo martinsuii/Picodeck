@@ -27,7 +27,7 @@
     <span class="brand-sub">docs</span>
   </a>
   <div class="top-spacer"></div>
-  <span class="version">v1.0.0</span>
+  <span class="version">v1.0.1</span>
   <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle dark mode">Dark</button>
   <a class="top-link" href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener">GitHub ↗</a>
   <a class="btn btn-small" href="https://github.com/martinsuii/Picodeck/releases">Download</a>
@@ -46,11 +46,11 @@
   <div class="side-title">Project</div>
   <a href="https://github.com/martinsuii/Picodeck/releases" target="_blank" rel="noopener">Releases</a>
   <a href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener">Source</a>
-  <a href="http://assets.msuii.dev/picopadapps/" target="_blank" rel="noopener">App catalogue</a>
+  <a href="https://pico.msuii.dev" target="_blank" rel="noopener">App store</a>
   <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener">Base project</a>
 </div>
     <div class="side-foot">
-      <div>PicoDeck <span>v1.0.0</span></div>
+      <div>PicoDeck <span>v1.0.1</span></div>
       <div class="muted">Base launcher by MakerClassCZ</div>
     </div>
   </aside>
@@ -63,7 +63,7 @@
       <div class="post-meta">
         <span>PicoDeck docs</span><span>·</span>
         <span>Updated November 2026</span><span>·</span>
-        <span>7 min read</span>
+        <span>9 min read</span>
       </div>
     </div>
     
@@ -118,6 +118,8 @@ and the built-in tools still work, but games, themes and apps need the card.</p>
 /Arcade/               MakeCode Arcade .uf2 games
 /Backups/              game/flash backups
 /Conf/                 updates and configuration
+/Conf/dev.txt          developer mode marker (empty, hidden)
+/Conf/cred.txt         developer registration token (hidden)
 /Themes/               .thm themes
 /apps.cfg              installed app ids (created by PicoDeck)
 /index.txt             optional app update index
@@ -208,8 +210,9 @@ seeds the module from it at boot.</p>
 </ol>
 <h3 id="install-from-the-internet">Install from the internet<a class="headerlink" href="#install-from-the-internet" title="Permanent link"></a></h3>
 <p><strong>APPS → App Store → From internet</strong> downloads from
-<code>http://assets.msuii.dev/picopadapps/</code> in 3 KB chunks. It needs WiFi connected.
-The desktop companion can proxy HTTPS if you run a different store.</p>
+<code>http://pico.msuii.dev/assets/apps/</code> in 3 KB chunks. It needs WiFi connected.</p>
+<p>Every package in the store is reviewed before it is published. The desktop
+companion can proxy HTTPS if you run a different store.</p>
 <h3 id="run-and-manage">Run and manage<a class="headerlink" href="#run-and-manage" title="Permanent link"></a></h3>
 <ul>
 <li>The APPS list has <strong>App Store</strong> first, then installed apps.</li>
@@ -239,6 +242,66 @@ hello|1.0|14014|hello.pap|Hello
 </code></pre>
 <p>If the index version is newer than the app's <code>app.ini</code> version, APPS shows
 <code>(update)</code>.</p>
+<h2 id="themes">Themes<a class="headerlink" href="#themes" title="Permanent link"></a></h2>
+<p>A theme is a <code>.thm</code> text file in <code>/Themes</code>. It can restyle the boot screen,
+the screensaver and the menu colours and layout. See
+<a href="index.html">themes/README.md</a>
+for the file format.</p>
+<h3 id="pick-a-theme">Pick a theme<a class="headerlink" href="#pick-a-theme" title="Permanent link"></a></h3>
+<p><strong>SETTINGS → Themes</strong> lists <code>Default</code> plus every <code>.thm</code> file on the card.
+<strong>A</strong> applies the highlighted theme, <strong>X</strong> goes back. The active theme is
+marked with <code>*</code>.</p>
+<h3 id="install-from-the-internet_1">Install from the internet<a class="headerlink" href="#install-from-the-internet_1" title="Permanent link"></a></h3>
+<ol>
+<li>Connect WiFi first (<strong>SETTINGS → WIFI</strong>).</li>
+<li><strong>SETTINGS → Themes → + Install from internet</strong>.</li>
+<li>Pick a theme and press <strong>A</strong>. It downloads in 3 KB chunks into <code>/Themes</code>
+   and becomes the active theme.</li>
+<li>Press <strong>X</strong> to go back; the new theme is already selected.</li>
+</ol>
+<h2 id="developer-accounts">Developer accounts<a class="headerlink" href="#developer-accounts" title="Permanent link"></a></h2>
+<p>The store at <a href="https://pico.msuii.dev">https://pico.msuii.dev</a> accepts uploads from registered
+developers. Registration needs a token from a PicoPad, so accounts are tied to
+a device.</p>
+<h3 id="enable-developer-mode">Enable developer mode<a class="headerlink" href="#enable-developer-mode" title="Permanent link"></a></h3>
+<ol>
+<li>Open <strong>FUN → Calculator</strong>.</li>
+<li>Type <code>789789</code> with the keypad.</li>
+<li>A hidden <strong>DEVELOPER MODE</strong> screen opens. Press <strong>A</strong> to turn it on.</li>
+<li>That writes an empty <code>/Conf/dev.txt</code> on the SD card. Press <strong>X</strong> to leave.</li>
+</ol>
+<p>While <code>dev.txt</code> exists, <strong>SETTINGS</strong> shows an extra entry:
+<strong>Credential manager</strong>.</p>
+<h3 id="generate-a-token">Generate a token<a class="headerlink" href="#generate-a-token" title="Permanent link"></a></h3>
+<ol>
+<li><strong>SETTINGS → Credential manager</strong>.</li>
+<li>Press <strong>A</strong> to generate a token, e.g.
+   <code>PICO-DEV-4F2A-91C0-7B3E-55D8</code>.</li>
+<li>It is saved to <code>/Conf/cred.txt</code> and shown as text and as a QR code that
+   points at the registration form.</li>
+<li>Press <strong>A</strong> again to replace the token (asks first). A token that is
+   already registered cannot be used again.</li>
+</ol>
+<h3 id="register-and-upload">Register and upload<a class="headerlink" href="#register-and-upload" title="Permanent link"></a></h3>
+<ol>
+<li>Open <a href="https://pico.msuii.dev/register">https://pico.msuii.dev/register</a> and enter the token, a username and
+   a password.</li>
+<li>Upload <code>.pap</code> app packages or <code>.thm</code> themes at <code>/upload</code>.</li>
+<li>Uploads wait in the moderation queue. <strong>My uploads</strong> shows <code>pending</code>,
+   <code>approved</code> or <code>rejected</code> with a reason.</li>
+<li>Once approved the package is published and appears in the store, in the
+   device's <strong>App Store → From internet</strong> and in
+   <strong>Themes → Install from internet</strong>.</li>
+</ol>
+<p>To hide developer mode again, run the calculator code and press <strong>A</strong> to turn
+it off. The Credential manager disappears from SETTINGS; the token file stays
+on the card until you replace it.</p>
+<blockquote>
+<p>Developer mode is a speed bump, not a security boundary. Anyone who can read
+the SD card can read the token, and the calculator code is in the source.
+The server enforces one account per token and reviews every package before
+it is published.</p>
+</blockquote>
 <h2 id="companion-app">Companion app<a class="headerlink" href="#companion-app" title="Permanent link"></a></h2>
 <p>The desktop and Android companion can:</p>
 <ul>
@@ -362,6 +425,17 @@ card first, so a crash before the app initialised the SD can still be saved.</p>
 <li><a href="#update-index">Update index</a></li>
 </ul>
 </li>
+<li><a href="#themes">Themes</a><ul>
+<li><a href="#pick-a-theme">Pick a theme</a></li>
+<li><a href="#install-from-the-internet_1">Install from the internet</a></li>
+</ul>
+</li>
+<li><a href="#developer-accounts">Developer accounts</a><ul>
+<li><a href="#enable-developer-mode">Enable developer mode</a></li>
+<li><a href="#generate-a-token">Generate a token</a></li>
+<li><a href="#register-and-upload">Register and upload</a></li>
+</ul>
+</li>
 <li><a href="#companion-app">Companion app</a></li>
 <li><a href="#recovery">Recovery</a></li>
 <li><a href="#crash-logs">Crash logs</a></li>
@@ -374,7 +448,7 @@ card first, so a crash before the app initialised the SD can still be saved.</p>
 </div>
 
 <footer class="footer">
-  <div>PicoDeck <strong>v1.0.0</strong> · docs</div>
+  <div>PicoDeck <strong>v1.0.1</strong> · docs</div>
   <div class="muted">Derived from <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener">PicoPad Arcade Launcher by MakerClassCZ</a></div>
 </footer>
 

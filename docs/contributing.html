@@ -27,7 +27,7 @@
     <span class="brand-sub">docs</span>
   </a>
   <div class="top-spacer"></div>
-  <span class="version">v1.0.0</span>
+  <span class="version">v1.0.1</span>
   <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle dark mode">Dark</button>
   <a class="top-link" href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener">GitHub ↗</a>
   <a class="btn btn-small" href="https://github.com/martinsuii/Picodeck/releases">Download</a>
@@ -46,11 +46,11 @@
   <div class="side-title">Project</div>
   <a href="https://github.com/martinsuii/Picodeck/releases" target="_blank" rel="noopener">Releases</a>
   <a href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener">Source</a>
-  <a href="http://assets.msuii.dev/picopadapps/" target="_blank" rel="noopener">App catalogue</a>
+  <a href="https://pico.msuii.dev" target="_blank" rel="noopener">App store</a>
   <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener">Base project</a>
 </div>
     <div class="side-foot">
-      <div>PicoDeck <span>v1.0.0</span></div>
+      <div>PicoDeck <span>v1.0.1</span></div>
       <div class="muted">Base launcher by MakerClassCZ</div>
     </div>
   </aside>
@@ -63,7 +63,7 @@
       <div class="post-meta">
         <span>PicoDeck docs</span><span>·</span>
         <span>Updated November 2026</span><span>·</span>
-        <span>5 min read</span>
+        <span>6 min read</span>
       </div>
     </div>
     
@@ -209,15 +209,21 @@ app SDK currently targets the 1 MB layout.</p>
 <li>[ ] Power loss during update and during a game flash (expected: recovery).</li>
 </ul>
 <h2 id="app-store">App store<a class="headerlink" href="#app-store" title="Permanent link"></a></h2>
-<p>The catalogue is served at <a href="http://assets.msuii.dev/picopadapps/">http://assets.msuii.dev/picopadapps/</a>.</p>
+<p>The catalogue is served at <a href="https://pico.msuii.dev">https://pico.msuii.dev</a>. The package tree lives at
+<code>http://pico.msuii.dev/assets/apps/</code> and <code>.../assets/themes/</code>.</p>
 <ul>
-<li>Files live in <code>/var/www/assets/picopadapps/</code> on the server.</li>
+<li>The site and moderation server run separately from this repository; they
+  write <code>index.txt</code> and the chunk files, and nginx serves that tree directly.</li>
 <li><code>index.txt</code> format: <code>id|version|size|url|name</code>.</li>
 <li>The PicoPad fetches over <strong>plain HTTP</strong>; package files are split into 3 KB
   chunks (<code>hello.pap.000</code>, <code>.001</code>, ...) because the module's HTTP buffer is
-  4 KB.</li>
-<li>The desktop companion can fetch HTTPS and stream packages instead.</li>
+  4 KB. Theme packages use the same chunking.</li>
+<li><code>assets.msuii.dev/picopadapps/</code> is kept as an alias for firmware 1.0.0,
+  which hardcodes that host. It must stay an alias, not a redirect: the
+  firmware only parses <code>200 OK</code>.</li>
 <li>Bump the app's <code>app.ini</code> <code>version=</code> and the index version together.</li>
+<li>Apps are native ARM code, so review the package contents before approving.
+  Themes cannot execute anything.</li>
 </ul>
 <h2 id="git-and-releases">Git and releases<a class="headerlink" href="#git-and-releases" title="Permanent link"></a></h2>
 <ul>
@@ -286,7 +292,7 @@ the crash log when there is one. Please don't paste secrets from <code>/wifi.cnf
 </div>
 
 <footer class="footer">
-  <div>PicoDeck <strong>v1.0.0</strong> · docs</div>
+  <div>PicoDeck <strong>v1.0.1</strong> · docs</div>
   <div class="muted">Derived from <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener">PicoPad Arcade Launcher by MakerClassCZ</a></div>
 </footer>
 

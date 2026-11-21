@@ -10,8 +10,8 @@
 // Launcher version — bump on every change (major.minor.patch).
 #define LAUNCHER_VERSION_MAJOR  1
 #define LAUNCHER_VERSION_MINOR  0
-#define LAUNCHER_VERSION_PATCH  0
-#define LAUNCHER_VERSION_STR    "1.0.0"
+#define LAUNCHER_VERSION_PATCH  1
+#define LAUNCHER_VERSION_STR    "1.0.1"
 
 // PicoLibSDK's Time() returns microseconds (timer_hw->timerawl). Use Millis()
 // for anything that expects milliseconds.

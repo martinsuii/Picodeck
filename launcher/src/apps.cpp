@@ -19,6 +19,7 @@
 #include "theme.h"
 #include "keyboard.h"
 #include "rubber_ducky.h"
+#include "store_net.h"
 
 extern FRAMETYPE ALIGNED FrameBuf[FRAMESIZE];
 
@@ -829,15 +830,7 @@ static void AppsFromSdRun(void)
 
 #define STORE_LINE_MAX 160
 
-typedef struct {
-    char id[APP_ID_LEN];
-    char version[12];
-    u32  size;
-    char url[40];
-    char name[APP_NAME_LEN];
-} StoreItem;
-
-static StoreItem g_store[APPS_MAX];
+static StoreItem g_store[STORE_MAX_ITEMS];
 static int g_store_count;
 
 static void StoreSend(const char* s)
@@ -875,7 +868,7 @@ static int StoreParseInt(const char* s, const char** endp)
     return v;
 }
 
-static Bool StoreFetchIndex(void)
+static Bool StoreUsbFetchIndex(void)
 {
     g_store_count = 0;
     StoreSend("STORE LIST");
@@ -889,7 +882,7 @@ static Bool StoreFetchIndex(void)
 
         if (!strncmp(line, "ENTRY ", 6))
         {
-            if (g_store_count >= APPS_MAX) continue;
+            if (g_store_count >= STORE_MAX_ITEMS) continue;
 
             char f[4][48];
             int fi = 0;
@@ -957,7 +950,7 @@ static int StoreDecode(const char* s, u8* out, int max)
 }
 
 // Ask the companion for one package, stream it to /apps/<NAME.PAP>.
-static Bool StoreDownload(const char* id, char* outName, int max)
+static Bool StoreUsbDownload(const char* id, char* outName, int max)
 {
     char cmd[32];
     strcpy(cmd, "STORE GET ");
@@ -1021,69 +1014,20 @@ static Bool StoreDownload(const char* id, char* outName, int max)
 
 static Bool StoreHttpFetchIndex(void)
 {
-    g_store_count = 0;
-
-    int len = 0;
-    const char* buf = NativeWifiHttpGet(
-        "http://assets.msuii.dev/picopadapps/index.txt", &len);
-    if (!buf || len <= 0) return False;
-
-    // Skip HTTP headers.
-    const char* body = buf;
-    int bodyLen = len;
-    for (int i = 0; i + 3 < len; i++)
-    {
-        if (buf[i] == '\r' && buf[i+1] == '\n' &&
-            buf[i+2] == '\r' && buf[i+3] == '\n')
-        {
-            body = buf + i + 4;
-            bodyLen = len - i - 4;
-            break;
-        }
-    }
-
-    int i = 0;
-    while (i < bodyLen && g_store_count < APPS_MAX)
-    {
-        int e = i;
-        while (e < bodyLen && body[e] != '\r' && body[e] != '\n') e++;
-
-        if (e > i && body[i] != '#')
-        {
-            char f[5][48];
-            int fi = 0;
-            int p = i;
-            while (fi < 5 && p < e)
-            {
-                int n = 0;
-                while (p < e && body[p] != '|' && n < 47)
-                    f[fi][n++] = body[p++];
-                f[fi][n] = 0;
-                fi++;
-                if (p < e && body[p] == '|') p++;
-            }
-            if (fi >= 2 && f[0][0])
-            {
-                StoreItem* it = &g_store[g_store_count++];
-                CopyStr(it->id, f[0], sizeof(it->id));
-                CopyStr(it->version, fi > 1 ? f[1] : "", sizeof(it->version));
-                it->size = (u32)StoreParseInt(fi > 2 ? f[2] : "0", NULL);
-                CopyStr(it->url, fi > 3 ? f[3] : "", sizeof(it->url));
-                CopyStr(it->name, fi > 4 ? f[4] : f[0], sizeof(it->name));
-            }
-        }
-
-        i = e;
-        while (i < bodyLen && (body[i] == '\r' || body[i] == '\n')) i++;
-    }
+    g_store_count = StoreFetchIndex("http://pico.msuii.dev/assets/apps/index.txt",
+                                    g_store, STORE_MAX_ITEMS);
     return g_store_count > 0;
 }
 
-// Download a .pap as 3 KB chunks over plain HTTP and install it.
+static void StoreAppProgress(u32 done, u32 total)
+{
+    AppProgress("Downloading", done, total);
+}
+
+// Download a .pap in 3 KB chunks and install it.
 static Bool StoreHttpDownload(const StoreItem* it)
 {
-    if (!it || it->size == 0 || it->size > 512u * 1024u || !it->url[0])
-        return False;
+    if (!it) return False;
 
     char papp[16];
     int n = 0;
@@ -1097,63 +1041,9 @@ static Bool StoreHttpDownload(const StoreItem* it)
     char path[96];
     JoinPath(path, sizeof(path), APPS_DIR, papp);
 
-    sFile f;
-    FileInit(&f);
-    if (!FileCreate(&f, path)) return False;
-
-    u32 done = 0;
-    int chunk = 0;
-
-    while (done < it->size && chunk < 200)
-    {
-        char url[128];
-        strcpy(url, "http://assets.msuii.dev/picopadapps/");
-        strcat(url, it->url);
-        strcat(url, ".");
-        int l = (int)StrLen(url);
-        url[l]     = (char)('0' + (chunk / 100) % 10);
-        url[l + 1] = (char)('0' + (chunk / 10) % 10);
-        url[l + 2] = (char)('0' + chunk % 10);
-        url[l + 3] = 0;
-
-        int len = 0;
-        const char* buf = NativeWifiHttpGet(url, &len);
-        if (!buf || len <= 0) break;
-
-        // HTTP 404 means there are no more chunks.
-        if (len > 11 && buf[9] == '4' && buf[10] == '0' && buf[11] == '4')
-            break;
-
-        const char* body = buf;
-        int bodyLen = len;
-        for (int i = 0; i + 3 < len; i++)
-        {
-            if (buf[i] == '\r' && buf[i+1] == '\n' &&
-                buf[i+2] == '\r' && buf[i+3] == '\n')
-            {
-                body = buf + i + 4;
-                bodyLen = len - i - 4;
-                break;
-            }
-        }
-        if (bodyLen <= 0) break;
-
-        if (done + (u32)bodyLen > it->size)
-            bodyLen = (int)(it->size - done);
-
-        AppProgress("Downloading", done, it->size);
-        if (FileWrite(&f, body, (u32)bodyLen) != (u32)bodyLen) break;
-        done += (u32)bodyLen;
-        chunk++;
-    }
-
-    FileClose(&f);
-
-    if (done != it->size)
-    {
-        FileDelete(path);
+    if (!StoreDownloadChunks("http://pico.msuii.dev/assets/apps/", it, path,
+                             StoreAppProgress))
         return False;
-    }
 
     return AppInstallPapp(papp);
 }
@@ -1173,11 +1063,11 @@ static void AppsOnlineRun(void)
 
     if (!StoreHttpFetchIndex())
     {
-        AppMessage("Store unavailable.", "http://assets.msuii.dev/picopadapps/");
+        AppMessage("Store unavailable.", "http://pico.msuii.dev/assets/apps/");
         return;
     }
 
-    static const char* labels[APPS_MAX];
+    static const char* labels[STORE_MAX_ITEMS];
     for (int i = 0; i < g_store_count; i++) labels[i] = g_store[i].name;
 
     int selected = 0;

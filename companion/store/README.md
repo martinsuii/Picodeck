@@ -1,4 +1,10 @@
-# PicoDeck app store (assets.msuii.dev/picopadapps)
+# PicoDeck app store — legacy fixture
+
+> The live store moved to <https://pico.msuii.dev> and is built from
+> [`storefront/`](../../storefront/README.md). This folder still works as a
+> local fixture: `serve.sh` exposes the same `index.txt` + 3 KB chunk layout
+> the device expects, which is handy for testing `STORE_URL` overrides.
+
 
 Live files are served by nginx on `msuii` from:
 

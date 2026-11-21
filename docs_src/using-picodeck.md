@@ -58,6 +58,8 @@ and the built-in tools still work, but games, themes and apps need the card.
 /Arcade/               MakeCode Arcade .uf2 games
 /Backups/              game/flash backups
 /Conf/                 updates and configuration
+/Conf/dev.txt          developer mode marker (empty, hidden)
+/Conf/cred.txt         developer registration token (hidden)
 /Themes/               .thm themes
 /apps.cfg              installed app ids (created by PicoDeck)
 /index.txt             optional app update index
@@ -160,8 +162,10 @@ Custom apps live on the SD card.
 ### Install from the internet
 
 **APPS → App Store → From internet** downloads from
-`http://assets.msuii.dev/picopadapps/` in 3 KB chunks. It needs WiFi connected.
-The desktop companion can proxy HTTPS if you run a different store.
+`http://pico.msuii.dev/assets/apps/` in 3 KB chunks. It needs WiFi connected.
+
+Every package in the store is reviewed before it is published. The desktop
+companion can proxy HTTPS if you run a different store.
 
 ### Run and manage
 
@@ -201,6 +205,73 @@ hello|1.0|14014|hello.pap|Hello
 
 If the index version is newer than the app's `app.ini` version, APPS shows
 `(update)`.
+
+## Themes
+
+A theme is a `.thm` text file in `/Themes`. It can restyle the boot screen,
+the screensaver and the menu colours and layout. See
+[themes/README.md](https://github.com/martinsuii/Picodeck/blob/main/themes/README.md)
+for the file format.
+
+### Pick a theme
+
+**SETTINGS → Themes** lists `Default` plus every `.thm` file on the card.
+**A** applies the highlighted theme, **X** goes back. The active theme is
+marked with `*`.
+
+### Install from the internet
+
+1. Connect WiFi first (**SETTINGS → WIFI**).
+2. **SETTINGS → Themes → + Install from internet**.
+3. Pick a theme and press **A**. It downloads in 3 KB chunks into `/Themes`
+   and becomes the active theme.
+4. Press **X** to go back; the new theme is already selected.
+
+## Developer accounts
+
+The store at <https://pico.msuii.dev> accepts uploads from registered
+developers. Registration needs a token from a PicoPad, so accounts are tied to
+a device.
+
+### Enable developer mode
+
+1. Open **FUN → Calculator**.
+2. Type `789789` with the keypad.
+3. A hidden **DEVELOPER MODE** screen opens. Press **A** to turn it on.
+4. That writes an empty `/Conf/dev.txt` on the SD card. Press **X** to leave.
+
+While `dev.txt` exists, **SETTINGS** shows an extra entry:
+**Credential manager**.
+
+### Generate a token
+
+1. **SETTINGS → Credential manager**.
+2. Press **A** to generate a token, e.g.
+   `PICO-DEV-4F2A-91C0-7B3E-55D8`.
+3. It is saved to `/Conf/cred.txt` and shown as text and as a QR code that
+   points at the registration form.
+4. Press **A** again to replace the token (asks first). A token that is
+   already registered cannot be used again.
+
+### Register and upload
+
+1. Open <https://pico.msuii.dev/register> and enter the token, a username and
+   a password.
+2. Upload `.pap` app packages or `.thm` themes at `/upload`.
+3. Uploads wait in the moderation queue. **My uploads** shows `pending`,
+   `approved` or `rejected` with a reason.
+4. Once approved the package is published and appears in the store, in the
+   device's **App Store → From internet** and in
+   **Themes → Install from internet**.
+
+To hide developer mode again, run the calculator code and press **A** to turn
+it off. The Credential manager disappears from SETTINGS; the token file stays
+on the card until you replace it.
+
+> Developer mode is a speed bump, not a security boundary. Anyone who can read
+> the SD card can read the token, and the calculator code is in the source.
+> The server enforces one account per token and reviews every package before
+> it is published.
 
 ## Companion app
 

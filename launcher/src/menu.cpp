@@ -10,6 +10,8 @@
 #include "boot_anim.h"
 #include "button_test.h"
 #include "calculator.h"
+#include "cred_app.h"
+#include "dev_menu.h"
 #include "clock_apps.h"
 #include "file_picker.h"
 #include "file_manager.h"
@@ -661,7 +663,8 @@ Bool CompanionAppLaunch(int index)
 #endif
 
 // --- SETTINGS -------------------------------------------------------------
-static const char* const SettingLabels[] = {
+// The visible list is built at runtime: developer mode adds one entry.
+static const char* const SettingBaseLabels[] = {
     "System Info",
     "Backlight",
     "Themes",
@@ -670,7 +673,7 @@ static const char* const SettingLabels[] = {
     "Update from SD",
     "Reboot to BOOTSEL",
 };
-static ToolFunc const SettingFuncs[] = {
+static ToolFunc const SettingBaseFuncs[] = {
     SysInfoRun,
     BacklightRun,
     ThemesRun,
@@ -679,7 +682,8 @@ static ToolFunc const SettingFuncs[] = {
     SdUpgradeRun,
     RebootToBootsel,
 };
-#define SETTING_COUNT ((int)(sizeof(SettingLabels) / sizeof(SettingLabels[0])))
+#define SETTING_BASE_COUNT \
+    ((int)(sizeof(SettingBaseLabels) / sizeof(SettingBaseLabels[0])))
 
 // --- SETTINGS > FLASH SETTINGS -------------------------------------------
 static const char* const FlashSettingLabels[] = {
@@ -869,7 +873,27 @@ static void FlashSettingsMenuRun(void)
 
 static void SettingsMenuRun(void)
 {
-    SubMenuRun("SETTINGS", SettingLabels, SettingFuncs, SETTING_COUNT);
+    static const char* labels[SETTING_BASE_COUNT + 1];
+    static ToolFunc funcs[SETTING_BASE_COUNT + 1];
+
+    int n = 0;
+    for (int i = 0; i < SETTING_BASE_COUNT; i++)
+    {
+        labels[n] = SettingBaseLabels[i];
+        funcs[n]  = SettingBaseFuncs[i];
+        n++;
+    }
+
+    // Developer mode is a file on the SD card, so this is re-evaluated every
+    // time SETTINGS opens. No reboot needed.
+    if (DevModeEnabled())
+    {
+        labels[n] = "Credential manager";
+        funcs[n]  = CredentialRun;
+        n++;
+    }
+
+    SubMenuRun("SETTINGS", labels, funcs, n);
 }
 
 // ---------------------------------------------------------------------------

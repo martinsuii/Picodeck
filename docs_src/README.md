@@ -24,7 +24,7 @@
 
 - Source: <https://github.com/martinsuii/Picodeck>
 - Releases: <https://github.com/martinsuii/Picodeck/releases>
-- App catalogue: <http://assets.msuii.dev/picopadapps/>
+- App store: <https://pico.msuii.dev>
 - Base project: <https://github.com/MakerClassCZ/picopad-arcade-launcher>
 
 PicoDeck is derived from the PicoPad Arcade Launcher by MakerClassCZ. The base

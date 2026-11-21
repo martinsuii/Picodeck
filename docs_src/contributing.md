@@ -173,15 +173,21 @@ Before a release, on real hardware:
 
 ## App store
 
-The catalogue is served at <http://assets.msuii.dev/picopadapps/>.
+The catalogue is served at <https://pico.msuii.dev>. The package tree lives at
+`http://pico.msuii.dev/assets/apps/` and `.../assets/themes/`.
 
-- Files live in `/var/www/assets/picopadapps/` on the server.
+- The site and moderation server run separately from this repository; they
+  write `index.txt` and the chunk files, and nginx serves that tree directly.
 - `index.txt` format: `id|version|size|url|name`.
 - The PicoPad fetches over **plain HTTP**; package files are split into 3 KB
   chunks (`hello.pap.000`, `.001`, ...) because the module's HTTP buffer is
-  4 KB.
-- The desktop companion can fetch HTTPS and stream packages instead.
+  4 KB. Theme packages use the same chunking.
+- `assets.msuii.dev/picopadapps/` is kept as an alias for firmware 1.0.0,
+  which hardcodes that host. It must stay an alias, not a redirect: the
+  firmware only parses `200 OK`.
 - Bump the app's `app.ini` `version=` and the index version together.
+- Apps are native ARM code, so review the package contents before approving.
+  Themes cannot execute anything.
 
 ## Git and releases
 

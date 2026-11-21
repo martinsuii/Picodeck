@@ -8,6 +8,7 @@
 
 #include "../include.h"
 #include "calculator.h"
+#include "dev_menu.h"
 
 #define CALC_COLS 4
 #define CALC_ROWS 5
@@ -178,6 +179,15 @@ void CalculatorRun(void)
                 {
                     g_entry[n] = ch;
                     g_entry[n + 1] = 0;
+                }
+
+                // Hidden developer menu. Kept out of every list.
+                if (StrComp(g_entry, "789789") == 0)
+                {
+                    g_entry[0] = 0;
+                    g_entering = False;
+                    CalcRender(row, col);
+                    DevMenuRun();
                 }
             }
             else if (ch == '.')

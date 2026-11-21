@@ -99,7 +99,7 @@ launcher, tool box and small app computer.
 - **APPS → App Store → From SD card** installs folders or single-file `.pap`
   packages.
 - **APPS → App Store → From internet** downloads from
-  `http://assets.msuii.dev/picopadapps/` as 3 KB chunks (plain HTTP; the
+  `http://pico.msuii.dev/assets/apps/` as 3 KB chunks (plain HTTP; the
   desktop companion can proxy HTTPS if needed).
 - **APPS** lists installed apps and launches them; **Y** opens the app manager:
   Launch, Reinstall, Edit config, Clear data, Remove.
@@ -152,17 +152,38 @@ launcher, tool box and small app computer.
 
 - Themes from `.thm` files on the SD card: colours, boot splash, screensaver,
   menu layout, text and shapes. See [`themes/README.md`](themes/README.md).
+- **SETTINGS → Themes → Install from internet** downloads reviewed themes from
+  `http://pico.msuii.dev/assets/themes/` and selects them.
 - TOOLS: GPIO control, Rubber Ducky, SD file manager, image viewer, WiFi,
   Button Test, UF2 Inspector, Companion Link, and the SD card reader/debug
   shell in development builds.
 - FUN: Snake, USB gamepad, mouse jiggler, media remote, keyboard pranks, Paint,
   Calculator, Stopwatch, Timer, MIDI pad.
 
+### Store and developer accounts
+
+- **APPS → App Store → From internet** pulls apps from
+  `http://pico.msuii.dev/assets/apps/`; themes use the same chunked download.
+- <https://pico.msuii.dev> is the catalogue: browse and download without an
+  account, upload with one.
+- Registration needs a one-time token from a PicoPad. Enter `789789` in
+  **FUN → Calculator** to open the hidden developer menu, turn developer mode
+  on (writes `/Conf/dev.txt`), then **SETTINGS → Credential manager** to
+  generate a token.
+- Uploads wait in a moderation queue. Approving publishes the chunks and
+  `index.txt` that the device reads.
+- The site and moderation server are deployed separately from this
+  repository.
+
 ### Version note
 
-PicoDeck **1.0.0** is a version reset after the earlier 1.x builds. The updater
-compares versions, so applying 1.0.0 over 1.6.0 shows
+PicoDeck **1.0.0** was a version reset after the earlier 1.x builds. The
+updater compares versions, so applying 1.0.0 over 1.6.0 shows
 `version is not newer (A: force)` — press **A** once.
+
+**1.0.1** moves the store to `pico.msuii.dev/assets/`, adds
+**Themes → Install from internet**, the calculator developer code, and the
+credential manager for developer accounts.
 
 ## Flash layout (1 MB default)
 
