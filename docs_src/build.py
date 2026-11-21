@@ -6,6 +6,7 @@
 Requires: pip install markdown
 """
 
+import datetime
 import pathlib
 import re
 import markdown
@@ -104,18 +105,18 @@ PAGES = [
 
 NAV_DOCS = """<div class="side-group">
   <div class="side-title">Documentation</div>
-  <a class="{a_index}" href="index.html"><span>▦</span> Overview</a>
-  <a class="{a_using}" href="using.html"><span>▤</span> Using PicoDeck</a>
-  <a class="{a_apps}" href="apps.html"><span>⌘</span> Making apps</a>
-  <a class="{a_contributing}" href="contributing.html"><span>⚙</span> Contributing</a>
+  <a class="{a_index}" href="index.html">Overview</a>
+  <a class="{a_using}" href="using.html">Using PicoDeck</a>
+  <a class="{a_apps}" href="apps.html">Making apps</a>
+  <a class="{a_contributing}" href="contributing.html">Contributing</a>
 </div>"""
 
 NAV_LINKS = """<div class="side-group">
   <div class="side-title">Project</div>
-  <a href="https://github.com/martinsuii/Picodeck/releases" target="_blank" rel="noopener"><span>↓</span> Releases</a>
-  <a href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener"><span>⌂</span> Source</a>
-  <a href="http://assets.msuii.dev/picopadapps/" target="_blank" rel="noopener"><span>◈</span> App catalogue</a>
-  <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener"><span>↗</span> Base project</a>
+  <a href="https://github.com/martinsuii/Picodeck/releases" target="_blank" rel="noopener">Releases</a>
+  <a href="https://github.com/martinsuii/Picodeck" target="_blank" rel="noopener">Source</a>
+  <a href="http://assets.msuii.dev/picopadapps/" target="_blank" rel="noopener">App catalogue</a>
+  <a href="https://github.com/MakerClassCZ/picopad-arcade-launcher" target="_blank" rel="noopener">Base project</a>
 </div>"""
 
 TEMPLATE = """<!doctype html>
@@ -166,6 +167,11 @@ TEMPLATE = """<!doctype html>
     <div class="page-head">
       <h1>{title}</h1>
       <p class="subtitle">{subtitle}</p>
+      <div class="post-meta">
+        <span>PicoDeck docs</span><span>·</span>
+        <span>Updated {updated}</span><span>·</span>
+        <span>{minutes} min read</span>
+      </div>
     </div>
     {hero}
     <article class="prose">
@@ -240,6 +246,8 @@ def main():
             crumb=page["crumb"],
             slug=page["slug"],
             version=ver,
+            updated=datetime.date.today().strftime("%B %Y"),
+            minutes=max(1, round(len(re.findall(r"\b\w+\b", md)) / 220)),
             nav_docs=nav_docs,
             nav_links=NAV_LINKS,
             hero=(HERO.format(version=ver) if page.get("hero") else ""),
